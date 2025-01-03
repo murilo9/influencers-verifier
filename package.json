@@ -1,0 +1,14 @@
+{
+  "name": "influencer-checker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev:api": "pnpm --filter api start:dev",
+    "dev:app": "pnpm --filter app dev",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
