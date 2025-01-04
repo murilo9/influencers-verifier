@@ -6,10 +6,6 @@ import {
 } from "@nestjs/common";
 import { ApifyService } from "./apify.provider";
 import { DatabaseService } from "./database.provider";
-import { ObjectId } from "mongodb";
-import { ClaimService } from "./claim.provider";
-import { InfluencerClaim } from "./types/influencer-claim";
-import { UniqueClaim } from "./types/unique-claim";
 import { InfluencerProfile } from "./types/influencer-profile";
 import { getSlug } from "./helpers/get-slug";
 

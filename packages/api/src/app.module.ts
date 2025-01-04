@@ -7,6 +7,8 @@ import { ApifyService } from "./apify.provider";
 import { InfluencerService } from "./influencer.provider";
 import { EventEmitterModule } from "@nestjs/event-emitter";
 import { ClaimService } from "./claim.provider";
+import { SentenceEncoderProvider } from "./sentence-encoder.provider";
+import * as use from "@tensorflow-models/universal-sentence-encoder";
 
 @Module({
   imports: [
@@ -37,6 +39,13 @@ import { ClaimService } from "./claim.provider";
         return new DatabaseService(client);
       },
       inject: [ConfigService],
+    },
+    {
+      provide: SentenceEncoderProvider,
+      useFactory: async () => {
+        const model = await use.load();
+        return new SentenceEncoderProvider(model);
+      },
     },
   ],
 })
