@@ -9,6 +9,7 @@ import { EventEmitterModule } from "@nestjs/event-emitter";
 import { ClaimService } from "./claim.provider";
 import { SentenceEncoderProvider } from "./sentence-encoder.provider";
 import * as use from "@tensorflow-models/universal-sentence-encoder";
+import { ScientificArticleService } from "./scientific-article.provider";
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import * as use from "@tensorflow-models/universal-sentence-encoder";
     ApifyService,
     InfluencerService,
     ClaimService,
+    ScientificArticleService,
     {
       provide: DatabaseService,
       useFactory: async (configService: ConfigService) => {
