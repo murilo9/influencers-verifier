@@ -21,59 +21,6 @@ export class InfluencerService {
   ) {}
 
   /**
-   *  Optimistically adds an influencer's claim.
-   * @param influencerId Name of the influencer
-   * @param text Original claim text from social media post
-   */
-  private async addInfluencerClaims(
-    influencerId: ObjectId,
-    claimsTexts: string[]
-  ) {
-    const influencer = (await this.databaseService.db
-      .collection("influencers")
-      .findOne({ _id: influencerId })) as InfluencerProfile;
-    const filteredClaims = await ClaimService.removeDuplicatedClaims(
-      claimsTexts
-    );
-    // Prepare the list of influencer claims
-    const influencerClaims: Array<Omit<InfluencerClaim, "_id">> = [];
-    // For each filtered text claim
-    for (const claim of filteredClaims) {
-      const claimHash = ClaimService.getClaimHash(claim);
-      // Looks for a unique claim with this hash
-      let uniqueClaim = await this.databaseService.db
-        .collection("uniqueClaims")
-        .findOne<UniqueClaim>({ hash: claimHash });
-      // If there is no unique claim yet, create it
-      if (!uniqueClaim) {
-        const insertResult = await this.databaseService.db
-          .collection("uniqueClaims")
-          .insertOne({
-            hash: claimHash,
-            verificationStatus: "unverified",
-          });
-        uniqueClaim = {
-          _id: insertResult.insertedId,
-          hash: claimHash,
-          verificationStatus: "unverified",
-        };
-      }
-      // Mounts the influencer claim
-      const influencerClaim: Omit<InfluencerClaim, "_id"> = {
-        influencerId: influencer._id,
-        originalText: claim,
-        uniqueClaimId: uniqueClaim._id,
-      };
-      // Appends the influencer claim in the influencer claims list
-      influencerClaims.push(influencerClaim);
-    }
-    // Finally, saves all the influencer claims
-    await this.databaseService.db
-      .collection("influencerClaims")
-      .insertMany(influencerClaims);
-  }
-
-  /**
    * Retrieves the profile of an influencer
    * @param name Non-slugged name of the influencer
    */

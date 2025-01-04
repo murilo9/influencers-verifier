@@ -10,8 +10,9 @@ export const getClaimExtractionPrompt = (
       content: `You will receive an array of social network posts. For each post, you should check what health claims 
       are being made, considering that a single post may contain more than 1 health claim. You should give your response 
       as a JSON object containing an array of claims, where the 'claim' field should be a string containing the claim 
-      in its most basic form (minimal necessary words to keep it meaningful), and the 'influencerId' should be a copy of 
-      the respective post's 'influencerId' attribute.`,
+      in its most basic form (minimal necessary words to keep it meaningful), the 'influencerId' should be a copy of 
+      the respective post's 'influencerId' attribute, and the 'originalText' field should be a copy of the original 
+      post text.`,
     },
     {
       role: "user",
@@ -40,12 +41,15 @@ export const getClaimExtractionPrompt = (
             items: {
               type: "object",
               additionalProperties: false,
-              required: ["influencerId", "claim"],
+              required: ["influencerId", "claim", "originalText"],
               properties: {
                 influencerId: {
                   type: "string",
                 },
                 claim: {
+                  type: "string",
+                },
+                originalText: {
                   type: "string",
                 },
               },

@@ -4,25 +4,27 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from "@nestjs/common";
-import crypto from "crypto";
+import * as crypto from "crypto";
 import { InfluencerClaim } from "./types/influencer-claim";
 import * as use from "@tensorflow-models/universal-sentence-encoder";
 import { DatabaseService } from "./database.provider";
-import { ObjectId } from "mongodb";
+import { ObjectId, WithoutId } from "mongodb";
 import { InfluencerProfile } from "./types/influencer-profile";
 import { InfluencerPost } from "./types/influencer-post";
 import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
 import OpenAI, { InternalServerError } from "openai";
 import { ConfigService } from "@nestjs/config";
 import { getClaimExtractionPrompt } from "./helpers/get-claim-extraction-prompt";
+import { UniqueClaim } from "./types/unique-claim";
 
 type PrebuiltClaim = {
   influencerId: string;
   claim: string;
+  originalText: string;
 };
 
 type ClaimsExtractedPayload = {
-  claims: Array<InfluencerClaim>;
+  claims: Array<PrebuiltClaim>;
 };
 
 @Injectable()
@@ -39,7 +41,11 @@ export class ClaimService {
     });
   }
 
-  static async areClaimsSimilar(claim1, claim2, threshold = 0.85) {
+  static async areClaimsSimilar(
+    claim1: string,
+    claim2: string,
+    threshold = 0.85
+  ) {
     const model = await use.load();
     const embeddings = await model.embed([claim1, claim2]);
 
@@ -62,16 +68,17 @@ export class ClaimService {
   }
 
   static async removeDuplicatedClaims(
-    claims: Array<string>
-  ): Promise<Array<string>> {
-    const filteredClaims: Array<string> = [claims[0]];
-    for (let i = 0; i < filteredClaims.length; i++) {
+    claims: Array<PrebuiltClaim>
+  ): Promise<Array<PrebuiltClaim>> {
+    const filteredClaims: Array<PrebuiltClaim> = [claims[0]];
+    for (let i = 0; i < claims.length; i++) {
       if (i > 0) {
-        const currentClaim = filteredClaims[i];
-        const previousClaim = filteredClaims[i - 1];
+        const currentClaim = claims[i];
+        const currentClaimText = claims[i].claim;
+        const previousClaimText = claims[i - 1].claim;
         const previousClaimIsSimilar = await this.areClaimsSimilar(
-          currentClaim,
-          previousClaim
+          currentClaimText,
+          previousClaimText
         );
         if (!previousClaimIsSimilar) {
           filteredClaims.push(currentClaim);
@@ -98,9 +105,9 @@ export class ClaimService {
         "No message content from assistant"
       );
     }
-    const payload = JSON.parse(response.message.content) as {
-      claims: Array<PrebuiltClaim>;
-    };
+    const payload = JSON.parse(
+      response.message.content
+    ) as ClaimsExtractedPayload;
     this.eventEmitter.emit("claims.extracted", payload);
   }
 
@@ -108,7 +115,63 @@ export class ClaimService {
   private async onClaimsExtracted(payload: ClaimsExtractedPayload) {
     console.log("claims extracted");
     console.log(payload);
-    // TODO: filter duplicated claims and save InfluencerClaims and uniquefy claims
+    const prebuiltClaims = payload.claims;
+    // Removes duplicated prebuilt claims
+    const filteredPrebuiltClaims = await ClaimService.removeDuplicatedClaims(
+      prebuiltClaims
+    );
+    // Uniquefy the prebuilt claims and save in the database
+    await this.uniquefyClaims(filteredPrebuiltClaims);
+  }
+
+  /**
+   * Uniequify claims. Transform prebuilt claims into unique claims and inserts them
+   * in the database if their hash does not exist yet.
+   * @param prebuildClaims List of prebuilt claims, with no duplicated claims.
+   */
+  public async uniquefyClaims(
+    prebuiltClaims: Array<PrebuiltClaim>
+  ): Promise<void> {
+    console.log("prebuilt claims", prebuiltClaims);
+    const influencerClaims: Array<WithoutId<InfluencerClaim>> = [];
+    const existingUniqueClaims = (
+      await this.databaseService.db
+        .collection<WithoutId<UniqueClaim>>("uniqueClaims")
+        .find()
+        .toArray()
+    ).reduce(
+      (store, uniqueClaim) => ({ ...store, [uniqueClaim.hash]: uniqueClaim }),
+      {} as Record<string, UniqueClaim>
+    );
+    for (const prebuiltClaim of prebuiltClaims) {
+      const claimHash = ClaimService.getClaimHash(prebuiltClaim.claim);
+      let uniqueClaimId: ObjectId | undefined =
+        existingUniqueClaims[claimHash]?._id;
+      // If this claim is not unique yet, registers it in the database
+      if (!uniqueClaimId) {
+        const insertResult = await this.databaseService.db
+          .collection<WithoutId<UniqueClaim>>("uniqueClaims")
+          .insertOne({
+            hash: claimHash,
+            verificationStatus: "unverified",
+          });
+        uniqueClaimId = insertResult.insertedId;
+        console.log("a unique claim was created");
+      }
+      // Builds the influencer claim
+      const influencerClaim: WithoutId<InfluencerClaim> = {
+        influencerId: new ObjectId(prebuiltClaim.influencerId),
+        originalText: prebuiltClaim.originalText,
+        uniqueClaimId,
+      };
+      // Adds it to the array of influencer claims to be created
+      influencerClaims.push(influencerClaim);
+    }
+    console.log("influencerClaims", influencerClaims);
+    // Finally, registers all influencer claims in the database
+    await this.databaseService.db
+      .collection<WithoutId<InfluencerClaim>>("influencerClaims")
+      .insertMany(influencerClaims);
   }
 
   /**
