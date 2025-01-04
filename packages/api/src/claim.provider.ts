@@ -22,6 +22,7 @@ type PrebuiltClaim = {
   claim: string;
   originalText: string;
   postUrl: string;
+  categories: Array<string>;
 };
 
 type ClaimsExtractedPayload = {
@@ -174,6 +175,7 @@ export class ClaimService {
       const claimDto: WithoutId<Claim> = {
         normalizedClaim: prebuiltClaim.claim,
         verificationStatus: "unverified",
+        categories: prebuiltClaim.categories,
         sources: {},
       };
       await this.databaseService.db

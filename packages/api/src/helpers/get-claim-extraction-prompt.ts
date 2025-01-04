@@ -11,9 +11,11 @@ export const getClaimExtractionPrompt = (
       are being made (as statements), considering that a single post may contain more than 1 health claim. You should 
       give your response as a JSON object containing an array of claims, where: the 'claim' field should be a string 
       containing the claim in its most basic form (minimal necessary words to keep its full meaning as an affirmmative or 
-      negative statement), the 'influencerId' should be a copy of the respective post's 'influencerId' attribute, 
-      the 'originalText' field should be a copy of the original post text, and the 'postUrl' attribute should be 
-      a copy of the post url.`,
+      negative statement), the 'categories' field should be an array of claim categories ('nutrition', 'fitness', 'reproduction', 
+      'sickness treatment', 'beauty', 'health conditions', 'preventive', 'sleep and recovery', 'child health', 'gender and sexuality', 
+      'immunity and infection', 'genetics' or 'mental health') the 'influencerId' should be a copy of the respective 
+      post's 'influencerId' attribute, the 'originalText' field should be a copy of the original post text, and 
+      the 'postUrl' attribute should be a copy of the post url.`,
     },
     {
       role: "user",
@@ -43,7 +45,13 @@ export const getClaimExtractionPrompt = (
             items: {
               type: "object",
               additionalProperties: false,
-              required: ["influencerId", "claim", "originalText", "postUrl"],
+              required: [
+                "influencerId",
+                "claim",
+                "originalText",
+                "postUrl",
+                "categories",
+              ],
               properties: {
                 influencerId: {
                   type: "string",
@@ -56,6 +64,13 @@ export const getClaimExtractionPrompt = (
                 },
                 postUrl: {
                   type: "string",
+                },
+                categories: {
+                  type: "array",
+                  aditionalProperties: false,
+                  items: {
+                    type: "string",
+                  },
                 },
               },
             },
