@@ -1,11 +1,15 @@
 import { Body, Controller, Get, Inject, Post, Query } from "@nestjs/common";
 import { InfluencerService } from "./influencer.provider";
 import { ObjectId } from "mongodb";
+import { ClaimService } from "./claim.provider";
+import { ApifyService } from "./apify.provider";
 
 @Controller("")
 export class AppController {
   constructor(
-    @Inject(InfluencerService) private influencerService: InfluencerService
+    @Inject(InfluencerService) private influencerService: InfluencerService,
+    @Inject(ClaimService) private claimService: ClaimService,
+    @Inject(ApifyService) private apifyService: ApifyService
   ) {}
 
   @Get("test")
@@ -23,17 +27,29 @@ export class AppController {
     return this.influencerService.registerInfluencer(query.name);
   }
 
-  @Post("fetch-claims")
-  fetchClaims(
+  @Post("fetch-posts")
+  fetchPosts(
     @Body()
     body: {
       influencerId: string;
       socialNetwork: "instagram" | "facebook";
     }
   ) {
-    return this.influencerService.fetchClaims(
+    return this.apifyService.fetchPosts(
       new ObjectId(body.influencerId),
       body.socialNetwork
+    );
+  }
+
+  @Post("processate-posts")
+  processatePosts(
+    @Body()
+    body: {
+      influencerId: string;
+    }
+  ) {
+    return this.claimService.processateInfluencerPosts(
+      new ObjectId(body.influencerId)
     );
   }
 }

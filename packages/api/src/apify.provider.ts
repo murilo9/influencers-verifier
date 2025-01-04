@@ -111,6 +111,7 @@ export class ApifyService {
                 localId: item.id as string,
                 socialNetwork: "instagram",
                 url: item.url as string,
+                influencerId: influencer._id,
               })
             );
             // Emmits the 'posts.fetched' event

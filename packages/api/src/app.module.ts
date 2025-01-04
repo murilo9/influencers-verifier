@@ -6,6 +6,7 @@ import { MongoClient } from "mongodb";
 import { ApifyService } from "./apify.provider";
 import { InfluencerService } from "./influencer.provider";
 import { EventEmitterModule } from "@nestjs/event-emitter";
+import { ClaimService } from "./claim.provider";
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { EventEmitterModule } from "@nestjs/event-emitter";
   providers: [
     ApifyService,
     InfluencerService,
+    ClaimService,
     {
       provide: DatabaseService,
       useFactory: async (configService: ConfigService) => {

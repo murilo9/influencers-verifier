@@ -1,38 +1,10 @@
 {
-  "header": { "type": "esummary", "version": "0.3" },
-  "result": {
-    "uids": ["7840891"],
-    "7840891": {
-      "uid": "7840891",
-      "pubdate": "2021 Feb",
-      "epubdate": "",
-      "printpubdate": "2021 Feb",
-      "source": "Ann Oncol",
-      "authors": [
-        { "name": "Casolino R", "authtype": "Author" },
-        { "name": "Braconi C", "authtype": "Author" },
-        { "name": "Malleo G", "authtype": "Author" },
-        { "name": "Paiella S", "authtype": "Author" },
-        { "name": "Bassi C", "authtype": "Author" },
-        { "name": "Milella M", "authtype": "Author" },
-        { "name": "Dreyer SB", "authtype": "Author" },
-        { "name": "Froeling FE", "authtype": "Author" },
-        { "name": "Chang DK", "authtype": "Author" },
-        { "name": "Biankin AV", "authtype": "Author" },
-        { "name": "Golan T", "authtype": "Author" }
-      ],
-      "title": "Reshaping preoperative treatment of pancreatic cancer in the era of precision medicine",
-      "volume": "32",
-      "issue": "2",
-      "pages": "183-196",
-      "articleids": [
-        { "idtype": "pmid", "value": "33248227" },
-        { "idtype": "doi", "value": "10.1016/j.annonc.2020.11.013" },
-        { "idtype": "pmcid", "value": "PMC7840891" }
-      ],
-      "fulljournalname": "Annals of Oncology",
-      "sortdate": "2021/02/01 00:00",
-      "pmclivedate": "2021/02/01"
-    }
-  }
+  "index": 0,
+  "message": {
+    "role": "assistant",
+    "content": "{\"claims\":[{\"influencerId\":\"67784c54b43a0e0b6c7c8530\",\"claim\":\"animal based diets can improve fertility\"},{\"influencerId\":\"67784c54b43a0e0b6c7c8530\",\"claim\":\"sugars and glycans impact metabolic diseases\"},{\"influencerId\":\"67784c54b43a0e0b6c7c8530\",\"claim\":\"transitioning has health repercussions\"},{\"influencerId\":\"67784c54b43a0e0b6c7c8530\",\"claim\":\"mold exposure contributes to serious health issues\"},{\"influencerId\":\"67784c54b43a0e0b6c7c8530\",\"claim\":\"poor air quality can cause brain fog and fatigue\"},{\"influencerId\":\"67784c54b43a0e0b6c7c8530\",\"claim\":\"mold can contribute to autoimmune disorders and neurological problems\"}]}",
+    "refusal": null
+  },
+  "logprobs": null,
+  "finish_reason": "stop"
 }

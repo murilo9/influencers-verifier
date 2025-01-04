@@ -125,11 +125,4 @@ export class InfluencerService {
     };
     return influencerProfile;
   }
-
-  async fetchClaims(
-    influencerId: ObjectId,
-    socialNetwork: "instagram" | "facebook"
-  ) {
-    return this.apifyService.fetchPosts(influencerId, socialNetwork);
-  }
 }
