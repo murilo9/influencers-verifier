@@ -1,5 +1,5 @@
 {
-  "name": "app",
+  "name": "@influencer-checker/app",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -15,9 +15,11 @@
     "@fontsource/roboto": "^5.1.1",
     "@mui/icons-material": "^6.3.1",
     "@mui/material": "^6.3.1",
+    "axios": "^1.7.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router": "^7.1.1"
+    "react-router": "^7.1.1",
+    "@influencer-checker/api": "workspace:api"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

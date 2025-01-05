@@ -1,5 +1,5 @@
 {
-  "name": "api",
+  "name": "@influencer-checker/api",
   "version": "1.0.0",
   "description": "",
   "main": "dist/src/main",
