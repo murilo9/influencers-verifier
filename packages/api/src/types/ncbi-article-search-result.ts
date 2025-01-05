@@ -3,10 +3,12 @@ export type NCBIArticleSearchResult = {
     Count: string;
     RetMax: string;
     RetStart: string;
-    IdList: {
-      // This is what matters
-      Id: string[];
-    };
+    IdList:
+      | {
+          // This is what matters
+          Id: string[] | string;
+        }
+      | "";
     TranslationSet: {
       Translation: {
         From: string;

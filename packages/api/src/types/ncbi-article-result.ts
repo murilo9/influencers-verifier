@@ -1,6 +1,26 @@
+export type SillyAbstractText = Array<{
+  _: string; // Pick this
+  $: {
+    Label: string;
+    NlmCategory: string;
+  };
+}>;
+
+export type AuthorData = {
+  $: {
+    ValidYN: string;
+  };
+  LastName: string;
+  ForeName: string;
+  Initials: string;
+  AffiliationInfo: {
+    Affiliation: string;
+  };
+};
+
 export type NCBIArticleResult = {
   PubmedArticleSet: {
-    PubmedArticle: {
+    PubmedArticle: Array<{
       MedlineCitation: {
         $: {
           Status: string;
@@ -53,30 +73,14 @@ export type NCBIArticleResult = {
             EndPage: string;
             MedlinePgn: string;
           };
-          Abstract: {
-            AbstractText: Array<{
-              _: string; // Pick this
-              $: {
-                Label: string;
-                NlmCategory: string;
-              };
-            }>;
+          Abstract?: {
+            AbstractText: string | SillyAbstractText;
           };
           AuthorList: {
             $: {
               CompleteYN: string;
             };
-            Author: Array<{
-              $: {
-                ValidYN: string;
-              };
-              LastName: string;
-              ForeName: string;
-              Initials: string;
-              AffiliationInfo: {
-                Affiliation: string;
-              };
-            }>;
+            Author: Array<AuthorData> | AuthorData;
           };
           Language: string;
           PublicationTypeList: {
@@ -131,6 +135,6 @@ export type NCBIArticleResult = {
           }>;
         };
       };
-    };
+    }>;
   };
 };

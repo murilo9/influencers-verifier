@@ -11,7 +11,7 @@ import { InfluencerService } from "./influencer.provider";
 import { ObjectId } from "mongodb";
 import { ClaimService } from "./claim.provider";
 import { ApifyService } from "./apify.provider";
-import { ScientificArticleService } from "./scientific-article.provider";
+import { ArticleService } from "./article.provider";
 
 @Controller("")
 export class AppController {
@@ -19,8 +19,8 @@ export class AppController {
     @Inject(InfluencerService) private influencerService: InfluencerService,
     @Inject(ClaimService) private claimService: ClaimService,
     @Inject(ApifyService) private apifyService: ApifyService,
-    @Inject(ScientificArticleService)
-    private scientificArticleService: ScientificArticleService
+    @Inject(ArticleService)
+    private articleService: ArticleService
   ) {}
 
   @Get("test")
@@ -66,11 +66,19 @@ export class AppController {
 
   @Get("search-articles")
   searchArticles(@Query() query: { search: string }) {
-    return this.scientificArticleService.searchArticles(query.search, "ncbi");
+    return this.articleService.searchArticles(query.search, "ncbi");
   }
 
-  @Get("article/:id")
-  getArticle(@Param("id") id: string, @Query() query: { source: "ncbi" }) {
-    return this.scientificArticleService.fetchArticlesByIds([id], query.source);
+  @Get("retrieve-articles")
+  getArticle(@Query() query: { ids: string; source: "ncbi" }) {
+    return this.articleService.fetchArticlesByIds(
+      query.ids.split(","),
+      query.source
+    );
+  }
+
+  @Post("verify-claims")
+  verifyClaims() {
+    return this.claimService.verifyClaimsSync();
   }
 }

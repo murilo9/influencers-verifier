@@ -16,6 +16,17 @@ import { ConfigService } from "@nestjs/config";
 import { getClaimExtractionPrompt } from "./helpers/get-claim-extraction-prompt";
 import { Claim } from "./types/claim";
 import { SentenceEncoderProvider } from "./sentence-encoder.provider";
+import { getArticleSearchQueryPrompt } from "./helpers/get-article-search-query-prompt";
+import { ArticleService } from "./article.provider";
+import { ClaimElements } from "./types/claim-elements";
+import { mountArticleSearchQueries } from "./helpers/mount-article-search-queries";
+import { Article } from "./types/article";
+import { getClaimVerificationPrompt } from "./helpers/get-claim-verification-prompt";
+import { wait } from "./helpers/wait";
+import { ClaimVerificationByArticlesPayload } from "./types/claim-verification-by-articles-payload";
+import { calculateClaimScore } from "./helpers/calculate-claim-score";
+
+const secondsToWait = 4;
 
 type PrebuiltClaim = {
   influencerId: string;
@@ -29,13 +40,22 @@ type ClaimsExtractedPayload = {
   claims: Array<PrebuiltClaim>;
 };
 
+type ArticleSearchQueryExtracetdPayload = {
+  elements: Array<
+    ClaimElements & {
+      claimId: string;
+    }
+  >;
+};
+
 @Injectable()
 export class ClaimService {
   private openAi: OpenAI;
 
   constructor(
     @Inject(DatabaseService) private databaseService: DatabaseService,
-    @Inject(ConfigService) private configService: ConfigService,
+    @Inject(ConfigService) configService: ConfigService,
+    @Inject(ArticleService) private articleService: ArticleService,
     @Inject(SentenceEncoderProvider)
     private sentenceEncoderProvider: SentenceEncoderProvider,
     private eventEmitter: EventEmitter2
@@ -177,6 +197,7 @@ export class ClaimService {
         verificationStatus: "unverified",
         categories: prebuiltClaim.categories,
         sources: {},
+        score: null,
       };
       await this.databaseService.db
         .collection<WithoutId<Claim>>("claims")
@@ -207,5 +228,109 @@ export class ClaimService {
     this.extractClaimsFromPosts(posts);
   }
 
-  public async verifyUnverifiedClaims() {}
+  /**
+   * Verificates a single claim and sets its scored based on the given articles.
+   * @param claim
+   * @param articles
+   */
+  private async verifySingleClaim(claim: Claim, articles: Array<Article>) {
+    let claimScore: number | null = null;
+    if (articles.length) {
+      const prompt = getClaimVerificationPrompt(claim, articles);
+      console.log("verifying claim: ", claim);
+      console.log("asking to ChatGPT verificate claim based on articles...");
+      const completion = await this.openAi.chat.completions.create(prompt);
+      const response = completion.choices[0];
+      if (!response.message.content) {
+        console.log("will throw assistant error:", response);
+        throw new InternalServerErrorException(
+          "No message content from assistant"
+        );
+      }
+      const payload = JSON.parse(
+        response.message.content
+      ) as ClaimVerificationByArticlesPayload;
+      const { results } = payload;
+      console.log("articles analysis results from ChatGPT:", results);
+      claimScore = calculateClaimScore(results);
+      console.log("claim score: ", claimScore);
+    }
+    await this.databaseService.db
+      .collection<Claim>("claims")
+      .updateOne(
+        { _id: claim._id },
+        { $set: { score: claimScore, verificationStatus: "verified" } }
+      );
+    console.log("Verification finished for this claim");
+  }
+
+  /**
+   * Verifies unverified claims.
+   */
+  @OnEvent("verify_claims")
+  private async verifyClaims() {
+    const unverifiedClaims = await this.databaseService.db
+      .collection<Claim>("claims")
+      .find({ verificationStatus: "unverified" })
+      .toArray();
+    const unverifiedClaimsStore = unverifiedClaims.reduce(
+      (store, claim) => ({ ...store, [claim._id.toString()]: claim }),
+      {} as Record<string, Claim>
+    );
+    const prompt = getArticleSearchQueryPrompt(unverifiedClaims);
+    console.log("asking claims elements to ChatGPT...");
+    const completion = await this.openAi.chat.completions.create(prompt);
+    const response = completion.choices[0];
+    if (!response.message.content) {
+      console.log("will throw assistant error:", response);
+      throw new InternalServerErrorException(
+        "No message content from assistant"
+      );
+    }
+    const payload = JSON.parse(
+      response.message.content
+    ) as ArticleSearchQueryExtracetdPayload;
+    // Fetches the articles for each claim
+    for (const claimElements of payload.elements) {
+      const claim = unverifiedClaimsStore[claimElements.claimId];
+      const searchQueries = mountArticleSearchQueries(claimElements);
+      const articleIdsFound: Record<string, string> = {};
+      for (const query of searchQueries) {
+        console.log("->query:", query);
+        console.log("searching for articles...");
+        const relatedArticlesIds = await this.articleService.searchArticles(
+          query,
+          "ncbi"
+        );
+        console.log(
+          relatedArticlesIds.length + " articles found for this query"
+        );
+        relatedArticlesIds.forEach((id) => (articleIdsFound[id] = id));
+        console.log(`Waiting ${secondsToWait} seconds...`);
+        await wait(secondsToWait);
+      }
+      const articleIdsFoundList = Object.values(articleIdsFound);
+      let articles: Array<Article> = [];
+      // Shortcuts if no articles have been found for this query
+      if (articleIdsFoundList.length) {
+        // Batch fetches the actual articles found
+        articles = await this.articleService.fetchArticlesByIds(
+          articleIdsFoundList.slice(0, 8), // Temporarily limited to 8 articles
+          "ncbi"
+        );
+      } else {
+        console.log("No articles found for this claim");
+      }
+      await this.verifySingleClaim(claim, articles);
+      console.log(`Waiting ${secondsToWait} seconds...`);
+      await wait(secondsToWait);
+    }
+    console.log("------------------------- END -------------------------");
+    return;
+  }
+
+  public verifyClaimsSync() {
+    this.eventEmitter.emit("verify_claims");
+    return;
+  }
 }

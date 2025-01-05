@@ -12,3 +12,16 @@ From the social posts, find which ones are health claims.
 For each health claim,find out which ones are unique (among the database) and uniquefy the ones that were not uniquefied yet.
 
 The biggest challenge is to detect duplicated claims. The larger the claims list, the longer it takes to work that out. Ideally, that should be done in batches. Hashing does not solve that because slightly different words in equivalent normalized claims already generate different hashes.
+
+Steps for verifying a claim:
+
+- Build the article fetching query (subject, action, target)
+- Use the query to fetch related articles
+- For each related article, use the abstract to check if it 1) supports/contradicts the claim or is inconclusive/irrelevant and 2) the strength level of the support/contradiction.
+- Based on the previous check, get a claim "score", where -1 to 0 is debunked, 0 to 0.4 is questionable and > 0.4 is validated. The amount of articles enhances the final score.
+- Based on the claim score, calculate the influencer score.
+
+Limitations:
+
+- for now, the articles search only retrieves the frist 20 results.
+- in order to avoid 429 errors, I have to wait at least 4 seconds between every request.

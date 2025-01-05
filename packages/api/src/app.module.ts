@@ -9,7 +9,7 @@ import { EventEmitterModule } from "@nestjs/event-emitter";
 import { ClaimService } from "./claim.provider";
 import { SentenceEncoderProvider } from "./sentence-encoder.provider";
 import * as use from "@tensorflow-models/universal-sentence-encoder";
-import { ScientificArticleService } from "./scientific-article.provider";
+import { ArticleService } from "./article.provider";
 
 @Module({
   imports: [
@@ -23,7 +23,7 @@ import { ScientificArticleService } from "./scientific-article.provider";
     ApifyService,
     InfluencerService,
     ClaimService,
-    ScientificArticleService,
+    ArticleService,
     {
       provide: DatabaseService,
       useFactory: async (configService: ConfigService) => {
@@ -45,7 +45,9 @@ import { ScientificArticleService } from "./scientific-article.provider";
     {
       provide: SentenceEncoderProvider,
       useFactory: async () => {
+        console.log("initializing model...");
         const model = await use.load();
+        console.log("model initialized");
         return new SentenceEncoderProvider(model);
       },
     },
