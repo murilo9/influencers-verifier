@@ -1,5 +1,5 @@
 Searching articles from NCBI:
-https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pmc&term=covid%20vaccine
+https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=covid%20vaccine
 
 Given an article ID, fetches its metadata:
 https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=33248227
@@ -18,8 +18,8 @@ Steps for verifying a claim:
 - Build the article fetching query (subject, action, target)
 - Use the query to fetch related articles
 - For each related article, use the abstract to check if it 1) supports/contradicts the claim or is inconclusive/irrelevant and 2) the strength level of the support/contradiction.
-- Based on the previous check, get a claim "score", where -1 to 0 is debunked, 0 to 0.4 is questionable and > 0.4 is validated. The amount of articles enhances the final score.
-- Based on the claim score, calculate the influencer score.
+- Based on the previous check, get a claim "score", where -1 to 0 is debunked, 0 to 0.4 is questionable, > 0.4 is supported, and null is unsupported. The amount of articles enhances the final score.
+- Based on the claims' scores, calculate the influencer score.
 
 Limitations:
 
