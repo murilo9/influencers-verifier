@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Get,
   Inject,
   Injectable,
   NotFoundException,
@@ -8,6 +9,7 @@ import { ApifyService } from "./apify.provider";
 import { DatabaseService } from "./database.provider";
 import { InfluencerProfile } from "./types/influencer-profile";
 import { getSlug } from "./helpers/get-slug";
+import { Filter, ObjectId } from "mongodb";
 
 @Injectable()
 export class InfluencerService {
@@ -16,19 +18,19 @@ export class InfluencerService {
     @Inject(ApifyService) private apifyService: ApifyService
   ) {}
 
-  /**
-   * Retrieves the profile of an influencer
-   * @param name Non-slugged name of the influencer
-   */
-  async influencerLookup(name: string) {
-    const slug = getSlug(name);
-    const influencer = await this.databaseService.db
-      .collection<InfluencerProfile>("influencers")
-      .findOne({ slug });
-    if (!influencer) {
-      throw new NotFoundException("Influencer not registered yet");
+  async fetchInfluencers(params: { id?: string; name?: string }) {
+    const { id, name } = params;
+    const query: Filter<InfluencerProfile> = {};
+    if (id) {
+      query._id = new ObjectId();
+    } else if (name) {
+      query.name = { $regex: name };
     }
-    return influencer;
+    const influencers = await this.databaseService.db
+      .collection<InfluencerProfile>("influencers")
+      .find(query)
+      .toArray();
+    return influencers;
   }
 
   async registerInfluencer(name: string) {

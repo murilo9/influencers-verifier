@@ -7,7 +7,7 @@ import {
 import * as crypto from "crypto";
 import * as use from "@tensorflow-models/universal-sentence-encoder";
 import { DatabaseService } from "./database.provider";
-import { ObjectId, WithoutId } from "mongodb";
+import { Filter, ObjectId, WithoutId } from "mongodb";
 import { InfluencerProfile } from "./types/influencer-profile";
 import { InfluencerPost } from "./types/influencer-post";
 import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
@@ -183,6 +183,28 @@ export class ClaimService {
         );
       console.log("a claim source was updated");
     }
+  }
+
+  async fetchClaims(params: { text?: string; categories?: string }) {
+    const { text, categories } = params;
+    const query: Filter<Claim> = {};
+    if (text) {
+      query.normalizedClaim = {
+        $regex: new RegExp(text.split("+").join("|"), "gim"),
+      };
+    }
+    if (categories) {
+      query.categories = {
+        $all: categories
+          ?.split(",")
+          .map((category) => category.split("+").join(" ")),
+      };
+    }
+    const claims = await this.databaseService.db
+      .collection<WithoutId<Claim>>("claims")
+      .find(query)
+      .toArray();
+    return claims;
   }
 
   /**

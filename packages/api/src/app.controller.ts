@@ -23,17 +23,17 @@ export class AppController {
     private articleService: ArticleService
   ) {}
 
-  @Get("test")
-  test() {
-    return "API Works!";
+  @Get("claims")
+  getClaims(@Query() query: { text?: string; categories?: string }) {
+    return this.claimService.fetchClaims(query);
   }
 
-  @Get("influencer")
-  getInfluencer(@Query() body: { name: string }) {
-    return this.influencerService.influencerLookup(body.name);
+  @Get("influencers")
+  getInfluencer(@Query() query: { name?: string; id?: string }) {
+    return this.influencerService.fetchInfluencers(query);
   }
 
-  @Post("influencer")
+  @Post("influencers")
   registerInfluencer(@Body() query: { name: string }) {
     return this.influencerService.registerInfluencer(query.name);
   }
