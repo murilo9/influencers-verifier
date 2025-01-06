@@ -23,21 +23,25 @@ export class AppController {
     private articleService: ArticleService
   ) {}
 
+  // Retrieves claims
   @Get("claims")
   getClaims(@Query() query: { text?: string; categories?: string }) {
     return this.claimService.fetchClaims(query);
   }
 
+  // Retrieves influencers
   @Get("influencers")
   getInfluencer(@Query() query: { name?: string; id?: string }) {
     return this.influencerService.fetchInfluencers(query);
   }
 
+  // Registers a new influencer
   @Post("influencers")
-  registerInfluencer(@Body() query: { name: string }) {
-    return this.influencerService.registerInfluencer(query.name);
+  registerInfluencer(@Body() body: { name: string }) {
+    return this.influencerService.registerInfluencer(body.name);
   }
 
+  // Fetch posts in a social profile for a specific influencer
   @Post("fetch-posts")
   fetchPosts(
     @Body()
@@ -52,6 +56,7 @@ export class AppController {
     );
   }
 
+  // Extract claims from influencers' posts
   @Post("processate-posts")
   processatePosts(
     @Body()
@@ -64,11 +69,13 @@ export class AppController {
     );
   }
 
+  // Search for articles in a medical database
   @Get("search-articles")
   searchArticles(@Query() query: { search: string }) {
     return this.articleService.searchArticles(query.search, "ncbi");
   }
 
+  // Retrieves a specific article in a medical database, by ID
   @Get("retrieve-articles")
   getArticle(@Query() query: { ids: string; source: "ncbi" }) {
     return this.articleService.fetchArticlesByIds(
@@ -77,6 +84,7 @@ export class AppController {
     );
   }
 
+  // Verifies all unverified claims
   @Post("verify-claims")
   verifyClaims() {
     return this.claimService.verifyClaimsSync();

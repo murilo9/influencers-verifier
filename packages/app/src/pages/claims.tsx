@@ -31,9 +31,13 @@ export default function ClaimsPage() {
       </Typography>
       <TextField label="Search" fullWidth sx={{ mb: 4 }} />
       <Stack spacing={1.5}>
-        {fetching
-          ? "Loading claims..."
-          : claims.map((claim) => <ClaimCard key={claim._id} claim={claim} />)}
+        {fetching ? (
+          "Loading claims..."
+        ) : claims.length ? (
+          claims.map((claim) => <ClaimCard key={claim._id} claim={claim} />)
+        ) : (
+          <Typography color="textSecondary">No claims</Typography>
+        )}
       </Stack>
     </Box>
   );

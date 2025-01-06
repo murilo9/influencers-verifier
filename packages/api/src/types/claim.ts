@@ -14,5 +14,6 @@ export type Claim<T> = {
       postUrl: string;
     }
   >;
+  articlesFound: number;
   score: number | null; // Claim status (supported, debunked, questionable) will be deducted from score (unsupported if score is null)
 };

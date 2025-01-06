@@ -220,6 +220,7 @@ export class ClaimService {
         categories: prebuiltClaim.categories,
         sources: {},
         score: null,
+        articlesFound: 0,
       };
       await this.databaseService.db
         .collection<WithoutId<Claim<ObjectId>>>("claims")
@@ -284,7 +285,13 @@ export class ClaimService {
       .collection<Claim<ObjectId>>("claims")
       .updateOne(
         { _id: claim._id },
-        { $set: { score: claimScore, verificationStatus: "verified" } }
+        {
+          $set: {
+            score: claimScore,
+            verificationStatus: "verified",
+            articlesFound: articles.length,
+          },
+        }
       );
     console.log("Verification finished for this claim");
   }
@@ -338,6 +345,9 @@ export class ClaimService {
       let articles: Array<Article> = [];
       // Shortcuts if no articles have been found for this query
       if (articleIdsFoundList.length) {
+        console.log(
+          articleIdsFoundList.length + " articles found for this claim in total"
+        );
         // Batch fetches the actual articles found
         articles = await this.articleService.fetchArticlesByIds(
           articleIdsFoundList.slice(0, 8), // Temporarily limited to 8 articles

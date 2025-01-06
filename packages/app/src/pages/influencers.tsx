@@ -61,11 +61,15 @@ export default function InfluencersPage() {
         <TextField label="Search" />
       </Stack>
       <Stack spacing={1.5}>
-        {fetching
-          ? "Loading influencers..."
-          : influencers.map((influencer) => (
-              <InfluencerCard influencer={influencer} />
-            ))}
+        {fetching ? (
+          "Loading influencers..."
+        ) : influencers.length ? (
+          influencers.map((influencer) => (
+            <InfluencerCard influencer={influencer} />
+          ))
+        ) : (
+          <Typography color="textSecondary">No influencers</Typography>
+        )}
       </Stack>
     </Box>
   );
