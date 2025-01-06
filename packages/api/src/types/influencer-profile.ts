@@ -8,8 +8,8 @@ export type InfluencerSocialProfile = {
   tiktok: string | null;
 };
 
-export type InfluencerProfile = {
-  _id: ObjectId;
+export type InfluencerProfile<T> = {
+  _id: T;
   slug: string;
   name: string;
   socialProfile: InfluencerSocialProfile;

@@ -2,8 +2,8 @@ import { ObjectId } from "mongodb";
 
 type InfluencerId = string;
 
-export type Claim = {
-  _id: ObjectId;
+export type Claim<T> = {
+  _id: T;
   normalizedClaim: string;
   verificationStatus: "verified" | "unverified";
   categories: Array<string>;

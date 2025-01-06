@@ -8,12 +8,14 @@ import { InfluencerProfile } from "@influencer-checker/api/src/types/influencer-
 import InfluencerCard from "../components/influencer-card";
 
 export default function InfluencersPage() {
-  const [influencers, setInfluencers] = useState<Array<InfluencerProfile>>([]);
+  const [influencers, setInfluencers] = useState<
+    Array<InfluencerProfile<string>>
+  >([]);
   const [fetching, setFetching] = useState(true);
 
   useEffect(() => {
     axios
-      .get<Array<InfluencerProfile>>(makeUrl("/influencers"))
+      .get<Array<InfluencerProfile<string>>>(makeUrl("/influencers"))
       .then((res) => {
         const { data } = res;
         setInfluencers(data);

@@ -14,7 +14,7 @@ import { ObjectId } from "mongodb";
 import { InfluencerPost } from "./types/influencer-post";
 
 type PostsFetchedEventPayload = {
-  posts: Array<Omit<InfluencerPost, "_id">>;
+  posts: Array<Omit<InfluencerPost<ObjectId>, "_id">>;
   postFetchRunId: ObjectId;
 };
 
@@ -51,7 +51,7 @@ export class ApifyService {
     socialNetwork: "instagram" | "facebook"
   ) {
     const influencer = await this.databaseService.db
-      .collection<Omit<InfluencerProfile, "_id">>("influencers")
+      .collection<Omit<InfluencerProfile<ObjectId>, "_id">>("influencers")
       .findOne({ _id: influencerId });
     if (!influencer) {
       throw new NotFoundException("Influencer not registered yet");
@@ -71,7 +71,7 @@ export class ApifyService {
   }
 
   private async createPostFetchRunnerForInstagram(
-    influencer: InfluencerProfile,
+    influencer: InfluencerProfile<ObjectId>,
     socialNetwork: "instagram" | "facebook"
   ) {
     const socialUrl = influencer.socialProfile[socialNetwork];
@@ -104,16 +104,17 @@ export class ApifyService {
           .listItems()
           .then((result) => {
             const { items } = result;
-            const posts: Array<Omit<InfluencerPost, "_id">> = items.map(
-              // This part is different for every social network
-              (item) => ({
-                content: (item.caption || "") as string,
-                localId: item.id as string,
-                socialNetwork: "instagram",
-                url: item.url as string,
-                influencerId: influencer._id,
-              })
-            );
+            const posts: Array<Omit<InfluencerPost<ObjectId>, "_id">> =
+              items.map(
+                // This part is different for every social network
+                (item) => ({
+                  content: (item.caption || "") as string,
+                  localId: item.id as string,
+                  socialNetwork: "instagram",
+                  url: item.url as string,
+                  influencerId: influencer._id,
+                })
+              );
             // Emmits the 'posts.fetched' event
             const payload: PostsFetchedEventPayload = {
               posts,

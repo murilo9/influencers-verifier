@@ -1,8 +1,9 @@
+import { ObjectId } from "mongodb";
 import { ChatCompletionCreateParamsNonStreaming } from "openai/resources";
 import { InfluencerPost } from "src/types/influencer-post";
 
 export const getClaimExtractionPrompt = (
-  posts: Array<InfluencerPost>
+  posts: Array<InfluencerPost<ObjectId>>
 ): ChatCompletionCreateParamsNonStreaming => ({
   messages: [
     {

@@ -20,14 +20,14 @@ export class InfluencerService {
 
   async fetchInfluencers(params: { id?: string; name?: string }) {
     const { id, name } = params;
-    const query: Filter<InfluencerProfile> = {};
+    const query: Filter<InfluencerProfile<ObjectId>> = {};
     if (id) {
       query._id = new ObjectId();
     } else if (name) {
       query.name = { $regex: name };
     }
     const influencers = await this.databaseService.db
-      .collection<InfluencerProfile>("influencers")
+      .collection<InfluencerProfile<ObjectId>>("influencers")
       .find(query)
       .toArray();
     return influencers;
@@ -36,7 +36,7 @@ export class InfluencerService {
   async registerInfluencer(name: string) {
     const slug = getSlug(name);
     const influencerExists = await this.databaseService.db
-      .collection<InfluencerProfile>("influencers")
+      .collection<InfluencerProfile<ObjectId>>("influencers")
       .findOne({ slug });
     if (influencerExists) {
       throw new BadRequestException("Influencer is already registered");
@@ -64,7 +64,7 @@ export class InfluencerService {
     const inserResult = await this.databaseService.db
       .collection("influencers")
       .insertOne(influencerData);
-    const influencerProfile: InfluencerProfile = {
+    const influencerProfile: InfluencerProfile<ObjectId> = {
       _id: inserResult.insertedId,
       ...influencerData,
     };

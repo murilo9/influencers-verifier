@@ -7,7 +7,7 @@ import { SOCIAL_ICONS } from "../helpers/social-icons";
 import { InsertChartOutlined, TaskAlt } from "@mui/icons-material";
 
 type InfluencerCardProps = {
-  influencer: InfluencerProfile;
+  influencer: InfluencerProfile<string>;
 };
 
 export default function InfluencerCard({ influencer }: InfluencerCardProps) {
@@ -63,7 +63,7 @@ export default function InfluencerCard({ influencer }: InfluencerCardProps) {
           <Stack>
             <Stack direction="row" alignItems="center" spacing={1}>
               <TaskAlt sx={{ fontSize: "20px" }} />
-              <Typography variant="h6">156</Typography>
+              <Typography variant="h6">156/163</Typography>
             </Stack>
             <Typography fontSize="14px">Verified Claims</Typography>
           </Stack>

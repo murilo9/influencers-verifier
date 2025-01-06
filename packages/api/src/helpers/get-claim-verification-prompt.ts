@@ -1,9 +1,10 @@
+import { ObjectId } from "mongodb";
 import { ChatCompletionCreateParamsNonStreaming } from "openai/resources";
 import { Article } from "src/types/article";
 import { Claim } from "src/types/claim";
 
 export const getClaimVerificationPrompt = (
-  claim: Claim,
+  claim: Claim<ObjectId>,
   articles: Array<Article>
 ): ChatCompletionCreateParamsNonStreaming => ({
   messages: [

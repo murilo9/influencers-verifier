@@ -1,8 +1,9 @@
+import { ObjectId } from "mongodb";
 import { ChatCompletionCreateParamsNonStreaming } from "openai/resources";
 import { Claim } from "src/types/claim";
 
 export const getArticleSearchQueryPrompt = (
-  claims: Array<Claim>
+  claims: Array<Claim<ObjectId>>
 ): ChatCompletionCreateParamsNonStreaming => ({
   messages: [
     {

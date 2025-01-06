@@ -86,7 +86,7 @@ export class ClaimService {
   // This may take VERY long
   private async getDuplicatedClaims(
     prebuiltClaims: Array<PrebuiltClaim>,
-    existingClaims: Array<Claim>
+    existingClaims: Array<Claim<ObjectId>>
   ): Promise<Array<PrebuiltClaim & { duplicateOf: ObjectId | null }>> {
     const filteredPrebuiltClaims: Array<
       PrebuiltClaim & { duplicateOf: ObjectId | null }
@@ -117,7 +117,7 @@ export class ClaimService {
    * @returns
    */
   private async extractClaimsFromPosts(
-    posts: Array<InfluencerPost>
+    posts: Array<InfluencerPost<ObjectId>>
   ): Promise<void> {
     console.log("extracting claims begin");
     const prompt = getClaimExtractionPrompt(posts);
@@ -143,8 +143,8 @@ export class ClaimService {
   @OnEvent("claims.extracted")
   private async onClaimsExtracted(payload: ClaimsExtractedPayload) {
     console.log("claims extracted");
-    const existingClaims: Array<Claim> = await this.databaseService.db
-      .collection<Claim>("claims")
+    const existingClaims: Array<Claim<ObjectId>> = await this.databaseService.db
+      .collection<Claim<ObjectId>>("claims")
       .find()
       .toArray();
     const prebuiltClaims = payload.claims;
@@ -164,7 +164,7 @@ export class ClaimService {
         ? { _id: prebuiltClaim.duplicateOf }
         : { normalizedClaim: prebuiltClaim.claim };
       let claimToUpdate = await this.databaseService.db
-        .collection<Claim>("claims")
+        .collection<Claim<ObjectId>>("claims")
         .findOne(filter);
       if (!claimToUpdate) {
         throw new InternalServerErrorException(
@@ -176,7 +176,7 @@ export class ClaimService {
         postUrl: prebuiltClaim.postUrl,
       };
       await this.databaseService.db
-        .collection<WithoutId<Claim>>("claims")
+        .collection<WithoutId<Claim<ObjectId>>>("claims")
         .updateOne(
           { _id: claimToUpdate._id },
           { $set: { sources: claimToUpdate.sources } }
@@ -187,7 +187,7 @@ export class ClaimService {
 
   async fetchClaims(params: { text?: string; categories?: string }) {
     const { text, categories } = params;
-    const query: Filter<Claim> = {};
+    const query: Filter<Claim<ObjectId>> = {};
     if (text) {
       query.normalizedClaim = {
         $regex: new RegExp(text.split("+").join("|"), "gim"),
@@ -201,7 +201,7 @@ export class ClaimService {
       };
     }
     const claims = await this.databaseService.db
-      .collection<WithoutId<Claim>>("claims")
+      .collection<WithoutId<Claim<ObjectId>>>("claims")
       .find(query)
       .toArray();
     return claims;
@@ -214,7 +214,7 @@ export class ClaimService {
    */
   public async addClaims(prebuiltClaims: Array<PrebuiltClaim>): Promise<void> {
     for (const prebuiltClaim of prebuiltClaims) {
-      const claimDto: WithoutId<Claim> = {
+      const claimDto: WithoutId<Claim<ObjectId>> = {
         normalizedClaim: prebuiltClaim.claim,
         verificationStatus: "unverified",
         categories: prebuiltClaim.categories,
@@ -222,7 +222,7 @@ export class ClaimService {
         score: null,
       };
       await this.databaseService.db
-        .collection<WithoutId<Claim>>("claims")
+        .collection<WithoutId<Claim<ObjectId>>>("claims")
         .insertOne(claimDto);
       console.log("a claim was added");
     }
@@ -236,13 +236,13 @@ export class ClaimService {
   public async processateInfluencerPosts(influencerId: ObjectId) {
     console.log("processating influencer posts begin");
     const influencer = await this.databaseService.db
-      .collection<InfluencerProfile>("influencers")
+      .collection<InfluencerProfile<ObjectId>>("influencers")
       .findOne({ _id: influencerId });
     if (!influencer) {
       throw new NotFoundException("Influencer not registered yet");
     }
     const posts = await this.databaseService.db
-      .collection<InfluencerPost>("influencerPosts")
+      .collection<InfluencerPost<ObjectId>>("influencerPosts")
       .find({
         influencerId,
       })
@@ -255,7 +255,10 @@ export class ClaimService {
    * @param claim
    * @param articles
    */
-  private async verifySingleClaim(claim: Claim, articles: Array<Article>) {
+  private async verifySingleClaim(
+    claim: Claim<ObjectId>,
+    articles: Array<Article>
+  ) {
     let claimScore: number | null = null;
     if (articles.length) {
       const prompt = getClaimVerificationPrompt(claim, articles);
@@ -278,7 +281,7 @@ export class ClaimService {
       console.log("claim score: ", claimScore);
     }
     await this.databaseService.db
-      .collection<Claim>("claims")
+      .collection<Claim<ObjectId>>("claims")
       .updateOne(
         { _id: claim._id },
         { $set: { score: claimScore, verificationStatus: "verified" } }
@@ -292,12 +295,12 @@ export class ClaimService {
   @OnEvent("verify_claims")
   private async verifyClaims() {
     const unverifiedClaims = await this.databaseService.db
-      .collection<Claim>("claims")
+      .collection<Claim<ObjectId>>("claims")
       .find({ verificationStatus: "unverified" })
       .toArray();
     const unverifiedClaimsStore = unverifiedClaims.reduce(
       (store, claim) => ({ ...store, [claim._id.toString()]: claim }),
-      {} as Record<string, Claim>
+      {} as Record<string, Claim<ObjectId>>
     );
     const prompt = getArticleSearchQueryPrompt(unverifiedClaims);
     console.log("asking claims elements to ChatGPT...");
