@@ -10,7 +10,7 @@ export const CLAIM_STATUS_DESCRIPTION: Record<ClaimStatus, string> = {
   "questionable-no-articles":
     "We did not find any articles negating or supporting this claim.",
   "questionable-score":
-    "Some articles support this claim, while others negate it.",
+    "Some articles support this claim, while others negate it or are inconclusive.",
   debunked: "Most or all articles found negate this claim.",
   supported: "Most or all articles found support this claim.",
   unverified: "We haven't validated this claim against scientific sources yet.",

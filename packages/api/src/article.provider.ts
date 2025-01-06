@@ -7,6 +7,7 @@ import {
   SillyAbstractText,
   NCBIArticleResult,
   AuthorData,
+  PubMedArticle,
 } from "./types/ncbi-article-result";
 
 const buildSearchUrl = (search: string, source: "ncbi") => {
@@ -72,9 +73,13 @@ const parseArticleResult = (
     case "ncbi":
       const ncbiResponse = response as NCBIArticleResult;
       console.log("parseArticleResult:ncbiResponse", ncbiResponse);
-      const articlesData = ncbiResponse.PubmedArticleSet.PubmedArticle;
+      let articlesData = ncbiResponse.PubmedArticleSet.PubmedArticle;
+      // Forces articlesData to be an array
+      if (!(articlesData as Array<PubMedArticle>).length) {
+        articlesData = [articlesData as PubMedArticle];
+      }
       const articles: Array<Article> = [];
-      articlesData.forEach((item) => {
+      (articlesData as Array<PubMedArticle>).forEach((item) => {
         try {
           const articleData = item.MedlineCitation;
           // Shortcuts if article has no abstract text (as it is likely invalid)

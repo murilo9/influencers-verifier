@@ -4,9 +4,29 @@ import { useEffect, useState } from "react";
 import ClaimCard from "../components/claim-card";
 import axios from "axios";
 import { makeUrl } from "../http";
+import { InfluencerProfile } from "@influencer-checker/api/src/types/influencer-profile";
+import { PopulatedClaimSource } from "../types/populated-claim-source";
+
+const processateSources = (
+  influencers: Record<string, InfluencerProfile<string>>,
+  claim: Claim<string>
+): Array<PopulatedClaimSource> => {
+  return Object.entries(claim.sources).map(([influencerId, source]) => {
+    const influencerProfile = influencers[influencerId];
+    const { originalText, postUrl } = source;
+    return {
+      originalText,
+      postUrl,
+      influencerProfile,
+    };
+  });
+};
 
 export default function ClaimsPage() {
   const [claims, setClaims] = useState<Array<Claim<string>>>([]);
+  const [influencers, setInfluencers] = useState<
+    Record<string, InfluencerProfile<string>>
+  >({});
   const [fetching, setFetching] = useState(true);
 
   useEffect(() => {
@@ -17,6 +37,16 @@ export default function ClaimsPage() {
       })
       .finally(() => {
         setFetching(false);
+      });
+    axios
+      .get<Array<InfluencerProfile<string>>>(makeUrl("/influencers"))
+      .then((res) => {
+        setInfluencers(
+          res.data.reduce(
+            (store, influencer) => ({ ...store, [influencer._id]: influencer }),
+            {}
+          )
+        );
       });
   }, []);
 
@@ -34,7 +64,17 @@ export default function ClaimsPage() {
         {fetching ? (
           "Loading claims..."
         ) : claims.length ? (
-          claims.map((claim) => <ClaimCard key={claim._id} claim={claim} />)
+          claims.map((claim) => (
+            <ClaimCard
+              key={claim._id}
+              claim={claim}
+              populatedSources={
+                Object.values(influencers).length
+                  ? processateSources(influencers, claim)
+                  : []
+              }
+            />
+          ))
         ) : (
           <Typography color="textSecondary">No claims</Typography>
         )}

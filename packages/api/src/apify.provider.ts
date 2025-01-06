@@ -94,11 +94,12 @@ export class ApifyService {
       resultsLimit: 10,
     };
     // Initializes the Apify actor run, and let it running in background
+    console.log("fetching posts...");
     this.client
       .actor("nH2AHrwxeTRJoN5hX")
       .call(input)
       .then((run) => {
-        console.log("Run done", run);
+        console.log("Run done");
         this.client
           .dataset(run.defaultDatasetId)
           .listItems()
@@ -127,8 +128,7 @@ export class ApifyService {
 
   @OnEvent("posts.fetched")
   private async onPostsFetched(payload: PostsFetchedEventPayload) {
-    console.log("posts fetched");
-    console.log(payload);
+    console.log(payload.posts.length, " posts fetched");
     const { postFetchRunId, posts } = payload;
     // Remove the post fetch run from the database
     await this.databaseService.db
