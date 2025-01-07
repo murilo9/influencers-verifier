@@ -1,25 +1,8 @@
-import { Claim } from "@influencer-checker/api/src/types/claim";
 import { Box, Stack, TextField, Typography } from "@mui/material";
 import { useContext } from "react";
 import ClaimCard from "../components/claim-card";
-import { InfluencerProfile } from "@influencer-checker/api/src/types/influencer-profile";
-import { PopulatedClaimSource } from "../types/populated-claim-source";
 import AppContext from "../app-context";
-
-const processateSources = (
-  influencers: Record<string, InfluencerProfile<string>>,
-  claim: Claim<string>
-): Array<PopulatedClaimSource> => {
-  return Object.entries(claim.sources).map(([influencerId, source]) => {
-    const influencerProfile = influencers[influencerId];
-    const { originalText, postUrl } = source;
-    return {
-      originalText,
-      postUrl,
-      influencerProfile,
-    };
-  });
-};
+import { processateClaimSources } from "../helpers/processate-claim-sorces";
 
 export default function ClaimsPage() {
   const { influencers, claims } = useContext(AppContext);
@@ -43,7 +26,7 @@ export default function ClaimsPage() {
               claim={claim}
               populatedSources={
                 Object.values(influencers).length
-                  ? processateSources(influencers, claim)
+                  ? processateClaimSources(influencers, claim)
                   : []
               }
             />

@@ -9,23 +9,11 @@ import {
   PersonOutline,
   TaskAlt,
 } from "@mui/icons-material";
-import { Claim } from "@influencer-checker/api/src/types/claim";
 import { useContext } from "react";
 import AppContext from "../app-context";
 import { getScoreStatus } from "../helpers/get-claim-verification-status";
 import { Link } from "react-router";
-
-const getInfluencerClaims = (
-  claims: Record<string, Claim<string>>,
-  influencer: InfluencerProfile<string>,
-  verifiedOnly = true
-) =>
-  Object.values(claims).filter((claim) => {
-    const isVerified =
-      claim.verificationStatus === "verified" && claim.score !== null;
-    const isMentionedByInfluencer = Boolean(claim.sources[influencer._id]);
-    return (verifiedOnly ? isVerified : true) && isMentionedByInfluencer;
-  });
+import { getInfluencerClaims } from "../helpers/get-influencer-claims";
 
 type InfluencerCardProps = {
   influencer: InfluencerProfile<string>;
@@ -86,7 +74,7 @@ export default function InfluencerCard({ influencer }: InfluencerCardProps) {
           sx={{ flex: 1, pr: 4 }}
         >
           <Stack spacing={1} sx={{ flex: 1 }}>
-            <Typography fontSize="14px">Verified Claims</Typography>
+            <Typography fontSize="14px">Talks About</Typography>
             <Stack
               direction="row"
               justifyContent="flex-start"
