@@ -1,4 +1,5 @@
 import {
+  HelpCenterOutlined,
   HourglassEmpty,
   QuestionMark,
   ThumbDownOutlined,
@@ -27,7 +28,9 @@ export const CLAIM_STATUS_TITLE: Record<ClaimStatus, string> = {
 const iconSx = { fontSize: "20px" };
 
 export const CLAIM_STATUS_ICON: Record<ClaimStatus, ReactNode> = {
-  "questionable-no-articles": <QuestionMark color="inherit" sx={iconSx} />,
+  "questionable-no-articles": (
+    <HelpCenterOutlined color="inherit" sx={iconSx} />
+  ),
   "questionable-score": <QuestionMark sx={iconSx} color="warning" />,
   debunked: <ThumbDownOutlined sx={iconSx} color="error" />,
   supported: <ThumbUpOutlined sx={iconSx} color="success" />,

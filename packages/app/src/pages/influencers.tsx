@@ -1,30 +1,24 @@
 import { Box, Stack, TextField, Typography } from "@mui/material";
 import { InsertChartOutlined, People, TaskAlt } from "@mui/icons-material";
-import { useEffect, useState } from "react";
+import { useContext } from "react";
 import StatsCard from "../components/stats-card";
-import axios from "axios";
-import { makeUrl } from "../http";
-import { InfluencerProfile } from "@influencer-checker/api/src/types/influencer-profile";
 import InfluencerCard from "../components/influencer-card";
+import AppContext from "../app-context";
 
 export default function InfluencersPage() {
-  const [influencers, setInfluencers] = useState<
-    Array<InfluencerProfile<string>>
-  >([]);
-  const [fetching, setFetching] = useState(true);
-
-  useEffect(() => {
-    axios
-      .get<Array<InfluencerProfile<string>>>(makeUrl("/influencers"))
-      .then((res) => {
-        const { data } = res;
-        setInfluencers(data);
-      })
-      .catch(console.log)
-      .finally(() => {
-        setFetching(false);
-      });
-  }, []);
+  const { influencers, claims } = useContext(AppContext);
+  const influencersList = Object.values(influencers);
+  const verifiedClaims = Object.values(claims).filter(
+    (claim) => claim.verificationStatus === "verified"
+  );
+  const claimsWithScore = verifiedClaims.filter(
+    (claim) => claim.score !== null
+  );
+  const averageTrustScore =
+    claimsWithScore.reduce(
+      (scoreSubTotal, claim) => scoreSubTotal + (claim.score || 0),
+      0
+    ) / claimsWithScore.length;
 
   return (
     <Box sx={{ p: 3 }}>
@@ -43,17 +37,17 @@ export default function InfluencersPage() {
       >
         <StatsCard
           label="Active Influencers"
-          value="1,234"
+          value={String(influencersList.length)}
           startSlot={<People sx={{ fontSize: "48px" }} />}
         />
         <StatsCard
           label="Claims Verified"
-          value="25,431"
+          value={String(verifiedClaims.length)}
           startSlot={<TaskAlt sx={{ fontSize: "48px" }} />}
         />
         <StatsCard
-          value="8.57"
-          label="Average trust score"
+          value={(averageTrustScore * 10).toFixed(1)}
+          label="Average Trust Score"
           startSlot={<InsertChartOutlined sx={{ fontSize: "48px" }} />}
         />
       </Stack>
@@ -61,10 +55,8 @@ export default function InfluencersPage() {
         <TextField label="Search" />
       </Stack>
       <Stack spacing={1.5}>
-        {fetching ? (
-          "Loading influencers..."
-        ) : influencers.length ? (
-          influencers.map((influencer) => (
+        {influencersList.length ? (
+          influencersList.map((influencer) => (
             <InfluencerCard influencer={influencer} />
           ))
         ) : (

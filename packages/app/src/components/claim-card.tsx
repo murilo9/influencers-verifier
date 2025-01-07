@@ -75,12 +75,13 @@ export default function ClaimCard({ claim, populatedSources }: ClaimCardProps) {
             <Stack direction="row" alignItems="center" spacing={1}>
               <ArticleOutlined
                 sx={{
-                  fontSize: "20px",
+                  fontSize: "18px",
                   color: claim.articlesFound ? "inherit" : "#aaaaaa",
                 }}
               />
               <Typography
-                variant="h6"
+                variant="body1"
+                fontWeight={500}
                 sx={{ height: "24px", lineHeight: "24px" }}
                 color={claim.articlesFound ? "inherit" : "textDisabled"}
               >
@@ -92,15 +93,16 @@ export default function ClaimCard({ claim, populatedSources }: ClaimCardProps) {
           <Grid2 size={3}>
             <Stack direction="row" alignItems="center" spacing={1}>
               {claim.score === null ? null : (
-                <TaskAlt sx={{ fontSize: "20px" }} color={claimStatus.color} />
+                <TaskAlt sx={{ fontSize: "18px" }} color={claimStatus.color} />
               )}
               <Typography
-                variant="h6"
+                variant="body1"
+                fontWeight={500}
                 color={claim.score === null ? "inherit" : claimStatus.color}
                 sx={{ height: "24px", lineHeight: "24px" }}
               >
                 {claim.score !== null
-                  ? `${(claim.score * 10).toFixed(1)}/10`
+                  ? `${(claim.score * 10).toFixed(1)}`
                   : "-"}
               </Typography>
             </Stack>
@@ -111,6 +113,7 @@ export default function ClaimCard({ claim, populatedSources }: ClaimCardProps) {
               {CLAIM_STATUS_ICON[claimStatus.label]}
               <Typography
                 variant="body1"
+                fontWeight={500}
                 color={CLAIM_STATUS_COLOR[claimStatus.label]}
               >
                 {CLAIM_STATUS_TITLE[claimStatus.label]}

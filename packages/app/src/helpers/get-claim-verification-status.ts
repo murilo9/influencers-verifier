@@ -28,3 +28,17 @@ export const getClaimVerificationStatus = (
       return { label: "supported", color: "success" };
   }
 };
+
+export const getScoreStatus = (score: number | null) => {
+  const scoreAsNumber = score as number;
+  switch (true) {
+    case score === null:
+      return "inherit";
+    case scoreAsNumber < 0:
+      return "error";
+    case scoreAsNumber < 0.6:
+      return "warning";
+    default:
+      return "success";
+  }
+};

@@ -1,6 +1,6 @@
 import { Typography } from "@mui/material";
 
-export default function InfluencerProfile() {
+export default function InfluencerProfilePage() {
   return (
     <>
       <Typography>Influencer Profile</Typography>

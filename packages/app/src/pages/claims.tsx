@@ -1,11 +1,10 @@
 import { Claim } from "@influencer-checker/api/src/types/claim";
 import { Box, Stack, TextField, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useContext } from "react";
 import ClaimCard from "../components/claim-card";
-import axios from "axios";
-import { makeUrl } from "../http";
 import { InfluencerProfile } from "@influencer-checker/api/src/types/influencer-profile";
 import { PopulatedClaimSource } from "../types/populated-claim-source";
+import AppContext from "../app-context";
 
 const processateSources = (
   influencers: Record<string, InfluencerProfile<string>>,
@@ -23,32 +22,8 @@ const processateSources = (
 };
 
 export default function ClaimsPage() {
-  const [claims, setClaims] = useState<Array<Claim<string>>>([]);
-  const [influencers, setInfluencers] = useState<
-    Record<string, InfluencerProfile<string>>
-  >({});
-  const [fetching, setFetching] = useState(true);
-
-  useEffect(() => {
-    axios
-      .get<Array<Claim<string>>>(makeUrl("/claims"))
-      .then((res) => {
-        setClaims(res.data);
-      })
-      .finally(() => {
-        setFetching(false);
-      });
-    axios
-      .get<Array<InfluencerProfile<string>>>(makeUrl("/influencers"))
-      .then((res) => {
-        setInfluencers(
-          res.data.reduce(
-            (store, influencer) => ({ ...store, [influencer._id]: influencer }),
-            {}
-          )
-        );
-      });
-  }, []);
+  const { influencers, claims } = useContext(AppContext);
+  const claimsList = Object.values(claims);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -61,10 +36,8 @@ export default function ClaimsPage() {
       </Typography>
       <TextField label="Search" fullWidth sx={{ mb: 4 }} />
       <Stack spacing={1.5}>
-        {fetching ? (
-          "Loading claims..."
-        ) : claims.length ? (
-          claims.map((claim) => (
+        {claimsList.length ? (
+          claimsList.map((claim) => (
             <ClaimCard
               key={claim._id}
               claim={claim}
