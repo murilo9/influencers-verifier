@@ -168,6 +168,10 @@ export default function AdminPanelPage() {
                 Register
               </Button>
             </Stack>
+            <Typography sx={{ color: "#444444", mt: 0.5 }}>
+              Note: an influencer's registration takes 2 minutes in the average
+              to be completed.
+            </Typography>
             <Typography variant="h6" sx={{ mt: 4 }}>
               Influencers' Status
             </Typography>
