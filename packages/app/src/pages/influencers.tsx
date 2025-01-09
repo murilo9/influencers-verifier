@@ -14,11 +14,12 @@ export default function InfluencersPage() {
   const claimsWithScore = verifiedClaims.filter(
     (claim) => claim.score !== null
   );
-  const averageTrustScore =
-    claimsWithScore.reduce(
-      (scoreSubTotal, claim) => scoreSubTotal + (claim.score || 0),
-      0
-    ) / claimsWithScore.length;
+  const averageTrustScore = claimsWithScore.length
+    ? claimsWithScore.reduce(
+        (scoreSubTotal, claim) => scoreSubTotal + (claim.score || 0),
+        0
+      ) / claimsWithScore.length
+    : 0;
 
   return (
     <Box sx={{ p: 3 }}>
