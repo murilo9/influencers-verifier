@@ -427,7 +427,7 @@ export class ClaimService {
   }
 
   public verifyClaimsSync() {
-    this.eventEmitter.emit("verify_claims");
+    this.eventEmitter.emit("verify_claims", {});
     return;
   }
 
@@ -472,7 +472,7 @@ export class ClaimService {
     // Saves the claims in the database
     await this.addClaims(filteredPrebuiltClaims);
     // Emmits the event to verify the new claims
-    this.eventEmitter.emit("verify_claims");
+    this.eventEmitter.emit("verify_claims", {});
   }
 
   public async deleteClaim(claimId: ObjectId) {
