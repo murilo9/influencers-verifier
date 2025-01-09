@@ -430,4 +430,55 @@ export class ClaimService {
     this.eventEmitter.emit("verify_claims");
     return;
   }
+
+  public async addCustomClaim(text: string) {
+    console.log("addCustomClaim begin");
+    const posts: Array<InfluencerPost<ObjectId>> = [
+      {
+        _id: new ObjectId(),
+        content: text,
+        influencerId: new ObjectId(),
+        localId: "",
+        socialNetwork: "instagram",
+        url: "",
+      },
+    ];
+    const prompt = getClaimExtractionPrompt(posts);
+    const completion = await this.openAi.chat.completions.create(prompt);
+    const response = completion.choices[0];
+    if (!response.message.content) {
+      console.log("will throw assistant error:", response);
+      throw new InternalServerErrorException(
+        "No message content from assistant"
+      );
+    }
+    const payload = JSON.parse(
+      response.message.content
+    ) as ChatGPTClaimsExtractedPayload;
+    // Converts all claims' text to lowercase
+    const prebuiltClaims = payload.claims.map((claim) => ({
+      ...claim,
+      claim: claim.claim.toLowerCase(),
+    }));
+    const existingClaims: Array<Claim<ObjectId>> = await this.databaseService.db
+      .collection<Claim<ObjectId>>("claims")
+      .find()
+      .toArray();
+    // Removes duplicated prebuilt claims
+    const filteredPrebuiltClaims = await this.getDuplicatedClaims(
+      prebuiltClaims,
+      existingClaims
+    );
+    // Saves the claims in the database
+    await this.addClaims(filteredPrebuiltClaims);
+    // Emmits the event to verify the new claims
+    this.eventEmitter.emit("verify_claims");
+  }
+
+  public async deleteClaim(claimId: ObjectId) {
+    await this.databaseService.db
+      .collection<Claim<ObjectId>>("claims")
+      .deleteOne({ _id: claimId });
+    return;
+  }
 }

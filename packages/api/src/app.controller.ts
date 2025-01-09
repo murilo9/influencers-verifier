@@ -88,4 +88,17 @@ export class AppController {
   deleteInfluencer(@Param("influencerId") influencerId: string) {
     return this.influencerService.deleteInfluencer(new ObjectId(influencerId));
   }
+
+  @UseGuards(IdentityGuard)
+  @Delete("claims/:claimId")
+  deleteClaim(@Param("claimId") claimId: string) {
+    return this.claimService.deleteClaim(new ObjectId(claimId));
+  }
+
+  @UseGuards(IdentityGuard)
+  @Post("custom-claims")
+  addCustomClaim(@Body() body: { text: string }) {
+    this.claimService.addCustomClaim(body.text);
+    return;
+  }
 }

@@ -2,6 +2,7 @@ import { Box, Chip, Grid2, IconButton, Stack, Typography } from "@mui/material";
 import { Claim } from "@influencer-checker/api/src/types/claim";
 import {
   ArticleOutlined,
+  Delete,
   KeyboardArrowDown,
   KeyboardArrowUp,
   TaskAlt,
@@ -21,9 +22,16 @@ import ClaimSourceEntry from "./claim-source-entry";
 type ClaimCardProps = {
   claim: Claim<string>;
   populatedSources: Array<PopulatedClaimSource>;
+  showDeleteButton?: boolean;
+  onDeleteClick?: () => void;
 };
 
-export default function ClaimCard({ claim, populatedSources }: ClaimCardProps) {
+export default function ClaimCard({
+  claim,
+  populatedSources,
+  showDeleteButton,
+  onDeleteClick,
+}: ClaimCardProps) {
   const claimStatus = getClaimVerificationStatus(claim);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -36,7 +44,7 @@ export default function ClaimCard({ claim, populatedSources }: ClaimCardProps) {
               claim.normalizedClaim.slice(1)}
           </Typography>
           <Typography color="textSecondary" fontSize="14px">
-            Mentioned by{" "}
+            {populatedSources.length ? "Mentioned by " : "No mentions"}
             {populatedSources.map((source, index) => (
               <>
                 {index ? ", " : ""}
@@ -129,6 +137,13 @@ export default function ClaimCard({ claim, populatedSources }: ClaimCardProps) {
             {isExpanded ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
           </IconButton>
         </Stack>
+        {showDeleteButton ? (
+          <Stack>
+            <IconButton color="error" onClick={onDeleteClick}>
+              <Delete />
+            </IconButton>
+          </Stack>
+        ) : null}
       </Stack>
       {isExpanded ? (
         <Stack sx={{ mt: 3 }}>

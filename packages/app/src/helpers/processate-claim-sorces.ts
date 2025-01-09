@@ -6,13 +6,21 @@ export const processateClaimSources = (
   influencers: Record<string, InfluencerProfile<string>>,
   claim: Claim<string>
 ): Array<PopulatedClaimSource> => {
-  return Object.entries(claim.sources).map(([influencerId, source]) => {
-    const influencerProfile = influencers[influencerId];
-    const { originalText, postUrl } = source;
-    return {
-      originalText,
-      postUrl,
-      influencerProfile,
-    };
-  });
+  return Object.entries(claim.sources)
+    .map(([influencerId, source]) => {
+      const influencerProfile = influencers[influencerId] as
+        | InfluencerProfile<string>
+        | undefined;
+      const { originalText, postUrl } = source;
+      return influencerProfile
+        ? {
+            originalText,
+            postUrl,
+            influencerProfile,
+          }
+        : undefined;
+    })
+    .filter((claimSource) =>
+      Boolean(claimSource)
+    ) as Array<PopulatedClaimSource>;
 };

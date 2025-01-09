@@ -51,6 +51,10 @@ function App() {
     loadAll();
   }, []);
 
+  if (fetching) {
+    return null;
+  }
+
   return (
     <>
       <Header />
