@@ -118,6 +118,7 @@ export default function AdminPanelPage() {
     console.log("onInterval");
     await validateAuth(accessToken || "");
     await loadInfluencers();
+    await loadClaims();
   };
 
   const onRemoveInfluencer = async () => {
