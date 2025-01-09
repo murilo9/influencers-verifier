@@ -231,6 +231,11 @@ export default function AdminPanelPage() {
             <Typography variant="h6" sx={{ mt: 4 }}>
               Claims List
             </Typography>
+            <Typography variant="body2" sx={{ color: "#444444" }}>
+              Disclose: AI's claim extractiion is not 100% perfect, and some
+              non-helath-related claims can still be generated, and can be
+              manually deleted.
+            </Typography>
             <Stack spacing={1.5} sx={{ mt: 5 }}>
               {claimsList.length ? (
                 claimsList.map((claim) => (
@@ -258,7 +263,10 @@ export default function AdminPanelPage() {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h5">Admin Panel</Typography>
-      <Typography>Here you can manage influencers and claims.</Typography>
+      <Typography>
+        Here you can manage influencers and claims. You should see updates in
+        real time but if that doesn't happen, try refreshing the page.
+      </Typography>
       <Tabs
         value={selectedView}
         onChange={(_, value) => setSelectedView(value)}

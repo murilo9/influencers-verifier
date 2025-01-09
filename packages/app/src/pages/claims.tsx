@@ -1,12 +1,16 @@
 import { Box, Stack, TextField, Typography } from "@mui/material";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import ClaimCard from "../components/claim-card";
 import AppContext from "../app-context";
 import { processateClaimSources } from "../helpers/processate-claim-sorces";
 
 export default function ClaimsPage() {
-  const { influencers, claims } = useContext(AppContext);
+  const { influencers, claims, loadClaims } = useContext(AppContext);
   const claimsList = Object.values(claims);
+
+  useEffect(() => {
+    loadClaims();
+  }, []);
 
   return (
     <Box sx={{ p: 3 }}>

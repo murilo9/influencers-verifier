@@ -9,7 +9,8 @@ export const getClaimExtractionPrompt = (
     {
       role: "developer",
       content: `You will receive an array of social network posts. For each post, you should check what health claims 
-      are being made (as statements), considering that a single post may contain more than 1 health claim. You should 
+      are being made (if any), as statements. A health claim refers to any explicit or implicit statement suggesting that a 
+      product, service, idea, or action has an effect on physical or mental health, whether positive or negative. You should 
       give your response as a JSON object containing an array of claims, where: the 'claim' field should be a string 
       containing the claim in its most basic form (minimal necessary words to keep its full meaning as an affirmmative or 
       negative statement), the 'categories' field should be an array of claim categories ('nutrition', 'fitness', 'reproduction', 

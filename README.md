@@ -24,4 +24,5 @@ Steps for verifying a claim:
 Limitations:
 
 - for now, the articles search only retrieves the frist 20 results.
-- in order to avoid 429 errors, I have to wait at least 4 seconds between every request.
+- in order to avoid status 429 errors, I have to wait at least 4 seconds between every request.
+- ChatGPT still doesn't extract health claims very well.

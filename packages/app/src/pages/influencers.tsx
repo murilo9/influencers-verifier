@@ -1,12 +1,12 @@
 import { Box, Stack, TextField, Typography } from "@mui/material";
 import { InsertChartOutlined, People, TaskAlt } from "@mui/icons-material";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import StatsCard from "../components/stats-card";
 import InfluencerCard from "../components/influencer-card";
 import AppContext from "../app-context";
 
 export default function InfluencersPage() {
-  const { influencers, claims } = useContext(AppContext);
+  const { influencers, claims, loadInfluencers } = useContext(AppContext);
   const influencersList = Object.values(influencers);
   const verifiedClaims = Object.values(claims).filter(
     (claim) => claim.verificationStatus === "verified"
@@ -20,6 +20,10 @@ export default function InfluencersPage() {
         0
       ) / claimsWithScore.length
     : 0;
+
+  useEffect(() => {
+    loadInfluencers();
+  }, []);
 
   return (
     <Box sx={{ p: 3 }}>
