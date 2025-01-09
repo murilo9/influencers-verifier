@@ -1,4 +1,3 @@
-import { ObjectId } from "mongodb";
 import { ClaimSource } from "./claim-source";
 
 type InfluencerId = string;

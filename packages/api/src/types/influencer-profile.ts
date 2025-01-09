@@ -1,5 +1,3 @@
-import { ObjectId } from "mongodb";
-
 export type InfluencerSocialProfile = {
   twitter: string | null;
   instagram: string | null;
