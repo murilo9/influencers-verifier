@@ -8,9 +8,21 @@ export type InfluencerSocialProfile = {
   tiktok: string | null;
 };
 
+export type InfluencerRegistrationStatus =
+  | "fetching_posts"
+  | "extracting_claims"
+  | "verifying_claims"
+  | "done"
+  | "error";
+
 export type InfluencerProfile<T> = {
   _id: T;
   slug: string;
   name: string;
   socialProfile: InfluencerSocialProfile;
+  registration: {
+    status: InfluencerRegistrationStatus;
+    lastUpdate: number;
+    errors: Array<{ timestamp: number; message: string }>;
+  };
 };

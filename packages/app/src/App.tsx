@@ -9,6 +9,10 @@ import { Claim } from "@influencer-checker/api/src/types/claim";
 import axios from "axios";
 import { makeUrl } from "./http";
 import InfluencerProfilePage from "./pages/influencer-profile";
+import AdminPanelPage from "./pages/admin-panel";
+import { useAuth } from "./helpers/useAuth";
+import AdminPanelSignInPage from "./pages/admin-panel-signin";
+import Header from "./components/header";
 
 function App() {
   const [influencers, setInfluencers] = useState<
@@ -16,6 +20,7 @@ function App() {
   >({});
   const [claims, setClaims] = useState<Record<string, Claim<string>>>({});
   const [fetching, setFetching] = useState(true);
+  const { accessToken } = useAuth();
 
   const loadInfluencers = async () => {
     const res = await axios.get<Array<InfluencerProfile<string>>>(
@@ -47,19 +52,30 @@ function App() {
   }, []);
 
   return (
-    <Box sx={{ maxWidth: "1280px", width: "100%", margin: "auto" }}>
-      <AppContext.Provider value={{ claims, influencers, fetching }}>
-        <Routes>
-          <Route path="influencers" element={<InfluencersPage />} />
-          <Route
-            path="influencers/:influencerId"
-            element={<InfluencerProfilePage />}
-          />
-          <Route path="claims" element={<ClaimsPage />} />
-          <Route path="*" element={<Navigate to="/influencers" />} />
-        </Routes>
-      </AppContext.Provider>
-    </Box>
+    <>
+      <Header />
+      <Box sx={{ maxWidth: "1280px", width: "100%", margin: "auto" }}>
+        <AppContext.Provider
+          value={{ claims, influencers, fetching, loadClaims, loadInfluencers }}
+        >
+          <Routes>
+            <Route path="influencers" element={<InfluencersPage />} />
+            <Route
+              path="influencers/:influencerId"
+              element={<InfluencerProfilePage />}
+            />
+            <Route path="claims" element={<ClaimsPage />} />
+            <Route
+              path="admin"
+              element={
+                accessToken ? <AdminPanelPage /> : <AdminPanelSignInPage />
+              }
+            />
+            <Route path="*" element={<Navigate to="/influencers" />} />
+          </Routes>
+        </AppContext.Provider>
+      </Box>
+    </>
   );
 }
 

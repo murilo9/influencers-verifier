@@ -36,7 +36,7 @@ type PrebuiltClaim = {
   categories: Array<string>;
 };
 
-type ClaimsExtractedPayload = {
+type ChatGPTClaimsExtractedPayload = {
   claims: Array<PrebuiltClaim>;
 };
 
@@ -116,38 +116,79 @@ export class ClaimService {
    * @param posts
    * @returns
    */
-  private async extractClaimsFromPosts(
-    posts: Array<InfluencerPost<ObjectId>>
-  ): Promise<void> {
+  @OnEvent("posts_saved")
+  private async extractClaimsFromPosts({
+    posts,
+    influencer,
+  }: {
+    posts: Array<InfluencerPost<ObjectId>>;
+    influencer: InfluencerProfile<ObjectId>;
+  }): Promise<void> {
     console.log("extracting claims begin");
-    const prompt = getClaimExtractionPrompt(posts);
-    const completion = await this.openAi.chat.completions.create(prompt);
-    const response = completion.choices[0];
-    if (!response.message.content) {
-      console.log("will throw assistant error:", response);
-      throw new InternalServerErrorException(
-        "No message content from assistant"
+    // Updates the influencer profile' registration status
+    influencer.registration.status = "extracting_claims";
+    influencer.registration.lastUpdate = new Date().getTime();
+    await this.databaseService.db
+      .collection<InfluencerProfile<ObjectId>>("influencers")
+      .updateOne(
+        { _id: influencer._id },
+        { $set: { registration: influencer.registration } }
       );
+    // Starts the claims extraction proccess
+    try {
+      const prompt = getClaimExtractionPrompt(posts);
+      const completion = await this.openAi.chat.completions.create(prompt);
+      const response = completion.choices[0];
+      if (!response.message.content) {
+        console.log("will throw assistant error:", response);
+        throw new InternalServerErrorException(
+          "No message content from assistant"
+        );
+      }
+      const payload = JSON.parse(
+        response.message.content
+      ) as ChatGPTClaimsExtractedPayload;
+      // Converts all claims' text to lowercase
+      const prebuiltClaims = payload.claims.map((claim) => ({
+        ...claim,
+        claim: claim.claim.toLowerCase(),
+      }));
+      // Emmits the claims_extracted event to CLaimService:onClaimsExtracted
+      this.eventEmitter.emit("claims_extracted", {
+        prebuiltClaims,
+        influencer,
+      });
+    } catch (error) {
+      console.log(error);
+      // Saves the error message
+      influencer.registration.errors.unshift({
+        timestamp: new Date().getTime(),
+        message: "Failed to extract claims from posts",
+      });
+      influencer.registration.status = "error";
+      this.databaseService.db
+        .collection<InfluencerProfile<ObjectId>>("influencers")
+        .updateOne(
+          { _id: influencer._id },
+          { $set: { registration: influencer.registration } }
+        );
     }
-    const payload = JSON.parse(
-      response.message.content
-    ) as ClaimsExtractedPayload;
-    // Converts all claims' text to lowercase
-    payload.claims = payload.claims.map((claim) => ({
-      ...claim,
-      claim: claim.claim.toLowerCase(),
-    }));
-    this.eventEmitter.emit("claims.extracted", payload);
   }
 
-  @OnEvent("claims.extracted")
-  private async onClaimsExtracted(payload: ClaimsExtractedPayload) {
-    console.log("claims extracted");
+  @OnEvent("claims_extracted")
+  private async sourceInfluencerToClaims({
+    influencer,
+    prebuiltClaims,
+  }: {
+    prebuiltClaims: Array<PrebuiltClaim>;
+    influencer: InfluencerProfile<ObjectId>;
+  }) {
+    console.log("sourceInfluencerToClaims begin");
+    // Starts the claims verification process
     const existingClaims: Array<Claim<ObjectId>> = await this.databaseService.db
       .collection<Claim<ObjectId>>("claims")
       .find()
       .toArray();
-    const prebuiltClaims = payload.claims;
     // Removes duplicated prebuilt claims
     const markedPrebuiltClaims = await this.getDuplicatedClaims(
       prebuiltClaims,
@@ -183,6 +224,17 @@ export class ClaimService {
         );
       console.log("a claim source was updated");
     }
+    // Updates the influencer profile' registration status
+    influencer.registration.status = "verifying_claims";
+    influencer.registration.lastUpdate = new Date().getTime();
+    await this.databaseService.db
+      .collection<InfluencerProfile<ObjectId>>("influencers")
+      .updateOne(
+        { _id: influencer._id },
+        { $set: { registration: influencer.registration } }
+      );
+    // Emmits the verify_claims event to ClaimProvider:verifyClaims
+    this.eventEmitter.emit("verify_claims", { influencer });
   }
 
   async fetchClaims(params: { text?: string; categories?: string }) {
@@ -208,9 +260,7 @@ export class ClaimService {
   }
 
   /**
-   * Uniequify claims. Transform prebuilt claims into unique claims and inserts them
-   * in the database if their hash does not exist yet.
-   * @param prebuildClaims List of prebuilt claims, with no duplicated claims.
+   * A dedicated function to save claims in the database.
    */
   public async addClaims(prebuiltClaims: Array<PrebuiltClaim>): Promise<void> {
     for (const prebuiltClaim of prebuiltClaims) {
@@ -227,28 +277,6 @@ export class ClaimService {
         .insertOne(claimDto);
       console.log("a claim was added");
     }
-  }
-
-  /**
-   * Extracts claims from a influencer's posts. The claims are left with 'unverified' state.
-   * Ideally, all posts from all social networks should already be fetched.
-   * @param influencerId
-   */
-  public async processateInfluencerPosts(influencerId: ObjectId) {
-    console.log("processating influencer posts begin");
-    const influencer = await this.databaseService.db
-      .collection<InfluencerProfile<ObjectId>>("influencers")
-      .findOne({ _id: influencerId });
-    if (!influencer) {
-      throw new NotFoundException("Influencer not registered yet");
-    }
-    const posts = await this.databaseService.db
-      .collection<InfluencerPost<ObjectId>>("influencerPosts")
-      .find({
-        influencerId,
-      })
-      .toArray();
-    this.extractClaimsFromPosts(posts);
   }
 
   /**
@@ -297,10 +325,15 @@ export class ClaimService {
   }
 
   /**
-   * Verifies unverified claims.
+   * Verifies all unverified claims.
    */
   @OnEvent("verify_claims")
-  private async verifyClaims() {
+  private async verifyClaims({
+    influencer,
+  }: {
+    influencer?: InfluencerProfile<ObjectId>;
+  }) {
+    console.log("verifyClaims begin");
     const unverifiedClaims = await this.databaseService.db
       .collection<Claim<ObjectId>>("claims")
       .find({ verificationStatus: "unverified" })
@@ -309,59 +342,88 @@ export class ClaimService {
       (store, claim) => ({ ...store, [claim._id.toString()]: claim }),
       {} as Record<string, Claim<ObjectId>>
     );
-    const prompt = getArticleSearchQueryPrompt(unverifiedClaims);
-    console.log("asking claims elements to ChatGPT...");
-    const completion = await this.openAi.chat.completions.create(prompt);
-    const response = completion.choices[0];
-    if (!response.message.content) {
-      console.log("will throw assistant error:", response);
-      throw new InternalServerErrorException(
-        "No message content from assistant"
-      );
-    }
-    const payload = JSON.parse(
-      response.message.content
-    ) as ArticleSearchQueryExtracetdPayload;
-    // Fetches the articles for each claim
-    for (const claimElements of payload.elements) {
-      const claim = unverifiedClaimsStore[claimElements.claimId];
-      const searchQueries = mountArticleSearchQueries(claimElements);
-      const articleIdsFound: Record<string, string> = {};
-      for (const query of searchQueries) {
-        console.log("->query:", query);
-        console.log("searching for articles...");
-        const relatedArticlesIds = await this.articleService.searchArticles(
-          query,
-          "ncbi"
+    try {
+      const prompt = getArticleSearchQueryPrompt(unverifiedClaims);
+      console.log("asking claims elements to ChatGPT...");
+      const completion = await this.openAi.chat.completions.create(prompt);
+      const response = completion.choices[0];
+      if (!response.message.content) {
+        console.log("will throw assistant error:", response);
+        throw new InternalServerErrorException(
+          "No message content from assistant"
         );
-        console.log(
-          relatedArticlesIds.length + " articles found for this query"
-        );
-        relatedArticlesIds.forEach((id) => (articleIdsFound[id] = id));
+      }
+      const payload = JSON.parse(
+        response.message.content
+      ) as ArticleSearchQueryExtracetdPayload;
+      // Fetches the articles for each claim
+      for (const claimElements of payload.elements) {
+        const claim = unverifiedClaimsStore[claimElements.claimId];
+        const searchQueries = mountArticleSearchQueries(claimElements);
+        const articleIdsFound: Record<string, string> = {};
+        for (const query of searchQueries) {
+          console.log("->query:", query);
+          console.log("searching for articles...");
+          const relatedArticlesIds = await this.articleService.searchArticles(
+            query,
+            "ncbi"
+          );
+          console.log(
+            relatedArticlesIds.length + " articles found for this query"
+          );
+          relatedArticlesIds.forEach((id) => (articleIdsFound[id] = id));
+          console.log(`Waiting ${secondsToWait} seconds...`);
+          await wait(secondsToWait);
+        }
+        const articleIdsFoundList = Object.values(articleIdsFound);
+        let articles: Array<Article> = [];
+        // Shortcuts if no articles have been found for this query
+        if (articleIdsFoundList.length) {
+          console.log(
+            articleIdsFoundList.length +
+              " articles found for this claim in total"
+          );
+          // Batch fetches the actual articles found
+          articles = await this.articleService.fetchArticlesByIds(
+            articleIdsFoundList.slice(0, 8), // Temporarily limited to 8 articles
+            "ncbi"
+          );
+        } else {
+          console.log("No articles found for this claim");
+        }
+        await this.verifySingleClaim(claim, articles);
         console.log(`Waiting ${secondsToWait} seconds...`);
         await wait(secondsToWait);
       }
-      const articleIdsFoundList = Object.values(articleIdsFound);
-      let articles: Array<Article> = [];
-      // Shortcuts if no articles have been found for this query
-      if (articleIdsFoundList.length) {
-        console.log(
-          articleIdsFoundList.length + " articles found for this claim in total"
-        );
-        // Batch fetches the actual articles found
-        articles = await this.articleService.fetchArticlesByIds(
-          articleIdsFoundList.slice(0, 8), // Temporarily limited to 8 articles
-          "ncbi"
-        );
-      } else {
-        console.log("No articles found for this claim");
+      // Updates the influencer's registration status
+      if (influencer) {
+        influencer.registration.status = "done";
+        this.databaseService.db
+          .collection<InfluencerProfile<ObjectId>>("influencers")
+          .updateOne(
+            { _id: influencer._id },
+            { $set: { registration: influencer.registration } }
+          );
       }
-      await this.verifySingleClaim(claim, articles);
-      console.log(`Waiting ${secondsToWait} seconds...`);
-      await wait(secondsToWait);
+      console.log("------------------------- END -------------------------");
+      return;
+    } catch (error) {
+      console.log(error);
+      // Saves the error message
+      if (influencer) {
+        influencer.registration.errors.unshift({
+          timestamp: new Date().getTime(),
+          message: "Failed to verify claims",
+        });
+        influencer.registration.status = "error";
+        this.databaseService.db
+          .collection<InfluencerProfile<ObjectId>>("influencers")
+          .updateOne(
+            { _id: influencer._id },
+            { $set: { registration: influencer.registration } }
+          );
+      }
     }
-    console.log("------------------------- END -------------------------");
-    return;
   }
 
   public verifyClaimsSync() {

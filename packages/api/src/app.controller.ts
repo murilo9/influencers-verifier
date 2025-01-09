@@ -1,17 +1,24 @@
 import {
+  BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Inject,
   Param,
   Post,
   Query,
+  UseGuards,
 } from "@nestjs/common";
 import { InfluencerService } from "./influencer.provider";
 import { ObjectId } from "mongodb";
 import { ClaimService } from "./claim.provider";
 import { ApifyService } from "./apify.provider";
 import { ArticleService } from "./article.provider";
+import { IdentityGuard } from "./guards/identity.guard";
+import * as jwt from "jsonwebtoken";
+import { ConfigService } from "@nestjs/config";
+import { BadRequestError } from "openai";
 
 @Controller("")
 export class AppController {
@@ -19,9 +26,36 @@ export class AppController {
     @Inject(InfluencerService) private influencerService: InfluencerService,
     @Inject(ClaimService) private claimService: ClaimService,
     @Inject(ApifyService) private apifyService: ApifyService,
+    @Inject(ConfigService) private configService: ConfigService,
     @Inject(ArticleService)
     private articleService: ArticleService
   ) {}
+
+  // Validates the auhtorization access token
+  @UseGuards(IdentityGuard)
+  @Get("authorization")
+  validateAuth() {
+    return;
+  }
+
+  // Signs in to the admin panel (retrieves an access token)
+  @Post("signin")
+  signIn(@Body() body: { password: string }) {
+    const actualAdminPassword = this.configService.get("ADMIN_PASSWORD");
+    const jwtSecret = this.configService.get("JWT_SECRET");
+    if (body.password !== actualAdminPassword) {
+      throw new BadRequestException("Wrong password");
+    }
+    const accessToken = jwt.sign(
+      {
+        adminPassword: actualAdminPassword,
+      },
+      jwtSecret
+    );
+    return {
+      accessToken,
+    };
+  }
 
   // Retrieves claims
   @Get("claims")
@@ -36,57 +70,22 @@ export class AppController {
   }
 
   // Registers a new influencer
+  @UseGuards(IdentityGuard)
   @Post("influencers")
   registerInfluencer(@Body() body: { name: string }) {
     return this.influencerService.registerInfluencer(body.name);
   }
 
-  // Fetch posts in a social profile for a specific influencer
-  @Post("fetch-posts")
-  fetchPosts(
-    @Body()
-    body: {
-      influencerId: string;
-      socialNetwork: "instagram" | "facebook";
-    }
-  ) {
-    return this.apifyService.fetchPosts(
-      new ObjectId(body.influencerId),
-      body.socialNetwork
-    );
-  }
-
-  // Extract claims from influencers' posts
-  @Post("processate-posts")
-  processatePosts(
-    @Body()
-    body: {
-      influencerId: string;
-    }
-  ) {
-    return this.claimService.processateInfluencerPosts(
-      new ObjectId(body.influencerId)
-    );
-  }
-
-  // Search for articles in a medical database
-  @Get("search-articles")
-  searchArticles(@Query() query: { search: string }) {
-    return this.articleService.searchArticles(query.search, "ncbi");
-  }
-
-  // Retrieves a specific article in a medical database, by ID
-  @Get("retrieve-articles")
-  getArticle(@Query() query: { ids: string; source: "ncbi" }) {
-    return this.articleService.fetchArticlesByIds(
-      query.ids.split(","),
-      query.source
-    );
-  }
-
   // Verifies all unverified claims
+  @UseGuards(IdentityGuard)
   @Post("verify-claims")
   verifyClaims() {
     return this.claimService.verifyClaimsSync();
+  }
+
+  @UseGuards(IdentityGuard)
+  @Delete("influencers/:influencerId")
+  deleteInfluencer(@Param("influencerId") influencerId: string) {
+    return this.influencerService.deleteInfluencer(new ObjectId(influencerId));
   }
 }

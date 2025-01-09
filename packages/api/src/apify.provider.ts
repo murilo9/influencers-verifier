@@ -46,34 +46,21 @@ export class ApifyService {
     return items as Array<{ social: string; socialProfileUrl: string }>;
   }
 
-  public async fetchPosts(
-    influencerId: ObjectId,
-    socialNetwork: "instagram" | "facebook"
-  ) {
-    const influencer = await this.databaseService.db
-      .collection<Omit<InfluencerProfile<ObjectId>, "_id">>("influencers")
-      .findOne({ _id: influencerId });
-    if (!influencer) {
-      throw new NotFoundException("Influencer not registered yet");
-    }
-
-    switch (socialNetwork) {
-      case "facebook":
-        // TODO:
-        break;
-      case "instagram":
-        this.createPostFetchRunnerForInstagram(influencer, socialNetwork);
-        break;
-      default:
-        throw new BadRequestException("Unknown social network");
-    }
-    return;
+  @OnEvent("social_profiles_fetched")
+  public async fetchPosts({
+    influencer,
+  }: {
+    influencer: InfluencerProfile<ObjectId>;
+  }) {
+    // Fow now, only instagram posts can be fetched
+    this.createPostFetchRunnerForInstagram(influencer);
   }
 
   private async createPostFetchRunnerForInstagram(
-    influencer: InfluencerProfile<ObjectId>,
-    socialNetwork: "instagram" | "facebook"
+    influencer: InfluencerProfile<ObjectId>
   ) {
+    console.log("createPostFetchRunnerForInstagram init");
+    const socialNetwork = "instagram";
     const socialUrl = influencer.socialProfile[socialNetwork];
     // Shortcuts if influencerhas no profile for this social network
     if (!socialUrl) {
@@ -82,19 +69,13 @@ export class ApifyService {
       );
     }
     const profileName = getProfileNameFromSocialUrl(socialUrl);
-    // Inserts the post fetch run in the database
-    const insertResult = await this.databaseService.db
-      .collection<Omit<PostFetchRunner, "_id">>("postFetchRunners")
-      .insertOne({ influencerId: influencer._id, socialNetwork });
-    const postFetchRunId = insertResult.insertedId;
-    console.log("post fetch run created", postFetchRunId);
     // Prepares the Apify actor input
     const input = {
       username: [profileName],
       resultsLimit: 10,
     };
     // Initializes the Apify actor run, and let it running in background
-    console.log("fetching posts...");
+    console.log("fetching posts... (this can take several seconds)");
     this.client
       .actor("nH2AHrwxeTRJoN5hX")
       .call(input)
@@ -116,27 +97,42 @@ export class ApifyService {
                   influencerId: influencer._id,
                 })
               );
-            // Emmits the 'posts.fetched' event
-            const payload: PostsFetchedEventPayload = {
-              posts,
-              postFetchRunId,
-            };
-            this.eventEmitter.emit("posts.fetched", payload);
+            // Emmits posts_fetched event to ApifyService:onPostsFetched
+            this.eventEmitter.emit("posts_fetched", { posts, influencer });
           });
+      })
+      // In case the posts fetching fails
+      .catch((error) => {
+        console.log(error);
+        // Saves the error message
+        influencer.registration.errors.unshift({
+          timestamp: new Date().getTime(),
+          message: "Failed to fetch posts from Instagram",
+        });
+        influencer.registration.status = "error";
+        this.databaseService.db
+          .collection<InfluencerProfile<ObjectId>>("influencers")
+          .updateOne(
+            { _id: influencer._id },
+            { $set: { registration: influencer.registration } }
+          );
       });
   }
 
-  @OnEvent("posts.fetched")
-  private async onPostsFetched(payload: PostsFetchedEventPayload) {
-    console.log(payload.posts.length, " posts fetched");
-    const { postFetchRunId, posts } = payload;
-    // Remove the post fetch run from the database
-    await this.databaseService.db
-      .collection("postFetchRunners")
-      .deleteOne({ _id: postFetchRunId });
+  @OnEvent("posts_fetched")
+  private async onPostsFetched({
+    posts,
+    influencer,
+  }: {
+    posts: Array<InfluencerPost<ObjectId>>;
+    influencer: InfluencerProfile<ObjectId>;
+  }) {
+    console.log(posts.length, " posts fetched");
     // Saves the posts in the database
     await this.databaseService.db
       .collection("influencerPosts")
       .insertMany(posts);
+    // Emmits the posts_saved event to ClaimService:extractClaimsFromPosts
+    this.eventEmitter.emit("posts_saved", { posts, influencer });
   }
 }

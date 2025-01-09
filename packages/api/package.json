@@ -21,6 +21,7 @@
     "@tensorflow/tfjs-node": "^4.22.0",
     "apify-client": "^2.11.0",
     "axios": "^1.7.9",
+    "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.12.0",
     "openai": "^4.77.3",
     "reflect-metadata": "0.2",
@@ -29,6 +30,7 @@
   "devDependencies": {
     "@nestjs/cli": "^10.4.9",
     "@nestjs/schematics": "^10.2.3",
+    "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.10.4",
     "@types/xml2js": "^0.4.14",
     "typescript": "^5"

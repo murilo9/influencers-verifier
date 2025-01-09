@@ -6,12 +6,16 @@ type ContextState = {
   influencers: Record<string, InfluencerProfile<string>>;
   claims: Record<string, Claim<string>>;
   fetching: boolean;
+  loadClaims: () => Promise<void>;
+  loadInfluencers: () => Promise<void>;
 };
 
 const defaultState: ContextState = {
   influencers: {},
   claims: {},
   fetching: true,
+  loadClaims: async () => {},
+  loadInfluencers: async () => {},
 };
 
 const AppContext = createContext(defaultState);
