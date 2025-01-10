@@ -5,6 +5,7 @@ const LINKS = [
   { label: "Influencers", href: "/influencers" },
   { label: "Claims", href: "/claims" },
   { label: "Admin Panel", href: "/admin" },
+  { label: "About", href: "/about" },
 ];
 
 export default function Header() {

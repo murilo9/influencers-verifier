@@ -13,6 +13,7 @@ import AdminPanelPage from "./pages/admin-panel";
 import { useAuth } from "./helpers/useAuth";
 import AdminPanelSignInPage from "./pages/admin-panel-signin";
 import Header from "./components/header";
+import AboutPage from "./pages/about";
 
 function App() {
   const [influencers, setInfluencers] = useState<
@@ -75,6 +76,7 @@ function App() {
                 accessToken ? <AdminPanelPage /> : <AdminPanelSignInPage />
               }
             />
+            <Route path="about" element={<AboutPage />} />
             <Route path="*" element={<Navigate to="/influencers" />} />
           </Routes>
         </AppContext.Provider>

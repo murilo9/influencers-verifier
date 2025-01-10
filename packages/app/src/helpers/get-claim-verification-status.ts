@@ -16,7 +16,7 @@ export const getClaimVerificationStatus = (
     return { label: "unverified", color: "inherit" };
   }
   if (claim.score === null) {
-    return { label: "questionable-no-articles", color: "warning" };
+    return { label: "unknown", color: "warning" };
   }
   // If claim is verified
   switch (true) {
