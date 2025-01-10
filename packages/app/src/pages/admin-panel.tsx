@@ -110,6 +110,7 @@ export default function AdminPanelPage() {
       } catch (error) {
         console.log(error);
         signOut();
+        window.location.reload();
       }
     }
   };
